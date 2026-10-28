@@ -45,8 +45,8 @@
 (printf "longest path: %s" (string/join (dag-longest-path g3) "->"))
 
 (def diamond (make-digraph))
-(add-nodes diamond ["s" "a" "b" "t"])
-(add-edges diamond [["s" "a" 1] ["s" "b" 1] ["a" "t" 1] ["b" "t" 1]])
+(add-nodes diamond "s" "a" "b" "t")
+(add-edges diamond ["s" "a" 1] ["s" "b" 1] ["a" "t" 1] ["b" "t" 1])
 
 (def ac (antichains diamond))
 (printf "antichains (%p): %s"
@@ -55,34 +55,34 @@
          (map (fn [a] (string "{" (string/join (map string a) ",") "}")) ac) " "))
 
 (def g4 (make-digraph))
-(add-nodes g4 ["s" "a" "b" "t"])
-(add-edges g4 [["s" "a" 1] ["s" "b" 1] ["a" "t" 1] ["b" "t" 1]])
+(add-nodes g4 "s" "a" "b" "t")
+(add-edges g4 ["s" "a" 1] ["s" "b" 1] ["a" "t" 1] ["b" "t" 1])
 
 (printf "sources: %s" (string/join (source-nodes g4) ", "))
 (printf "sinks:   %s" (string/join (sink-nodes g4) ", "))
 
 (def cyclic (make-digraph))
-(add-nodes cyclic ["a" "b" "c"])
-(add-edges cyclic [["a" "b" 1] ["b" "c" 1] ["c" "a" 1]])
+(add-nodes cyclic "a" "b" "c")
+(add-edges cyclic ["a" "b" 1] ["b" "c" 1] ["c" "a" 1])
 
 (def fas (feedback-arc-set cyclic))
 (printf "feedback arc set: %s"
         (string/join (map (fn [e] (string (e 0) "->" (e 1))) fas) " "))
 
 (def c3 (make-digraph))
-(add-nodes c3 ["a" "b" "c"])
-(add-edges c3 [["a" "b" 1] ["b" "c" 1] ["c" "a" 1]])
+(add-nodes c3 "a" "b" "c")
+(add-edges c3 ["a" "b" 1] ["b" "c" 1] ["c" "a" 1])
 
 (def c3chord (make-digraph))
-(add-nodes c3chord ["a" "b" "c"])
-(add-edges c3chord [["a" "b" 1] ["b" "c" 1] ["c" "a" 1] ["a" "c" 1]])
+(add-nodes c3chord "a" "b" "c")
+(add-edges c3chord ["a" "b" 1] ["b" "c" 1] ["c" "a" 1] ["a" "c" 1])
 
 (printf "C3 is-aperiodic? %p" (is-aperiodic? c3))
 (printf "C3+chord is-aperiodic? %p" (is-aperiodic? c3chord))
 
 (def causal (make-digraph))
-(add-nodes causal ["x" "y" "z" "w"])
-(add-edges causal [["x" "z" 1] ["y" "z" 1] ["z" "w" 1]])
+(add-nodes causal "x" "y" "z" "w")
+(add-edges causal ["x" "z" 1] ["y" "z" 1] ["z" "w" 1])
 
 (printf "colliders: %s" (string/join (colliders causal) ", "))
 

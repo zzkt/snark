@@ -1,8 +1,8 @@
 (import graphs :prefix "")
 
 (def g (make-graph))
-(add-nodes g ["a" "b" "c" "d" "e"])
-(add-edges g [["a" "b"] ["a" "c"] ["b" "c"] ["c" "d"] ["d" "e"] ["c" "e"]])
+(add-nodes g "a" "b" "c" "d" "e")
+(add-edges g ["a" "b"] ["a" "c"] ["b" "c"] ["c" "d"] ["d" "e"] ["c" "e"])
 
 (def cn (core-number g))
 (printf "core numbers: %s"

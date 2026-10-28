@@ -5,7 +5,7 @@
 (def dir "doc/examples")
 (def out "doc/examples.janet")
 
-(os/shell (string emacs " --batch -Q"))
+(os/shell (string emacs " --batch -Q -l doc/tangle-docs.el"))
 
 (if (and (os/stat dir) (os/stat out))
   (do
