@@ -1,0 +1,45 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/similarity.janet
+#+title: Similarity
+
+*Modules:* [[file:../../graphs/similarity.janet][similarity]]
+
+Neighbourhood-based similarity and nearest-neighbour search.
+
+* Summary
+
+- =jaccard-similarity= — $|N(u) ∩ N(v)| / |N(u) ∪ N(v)|$
+- =cosine-similarity= — the cosine of the adjacency weight vectors.
+- =knn= — the top =k= most similar nodes to =u=, by jaccard (default) or =:cosine= as the mode argument.
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+A triangle, where every pair of nodes has Jaccard similarity 1/3
+
+#+begin_src janet :session examples :results output
+(def g (make-graph))
+(add-nodes g ["a" "b" "c" "d"])
+(add-edges g [["a" "b"] ["a" "c"] ["b" "c"]])
+
+(printf "J(a,b) = %.3f" (jaccard-similarity g "a" "b"))
+
+(printf "knn(a) = %p" (knn g "a" 1))
+
+(printf "knn(a) cosine = %p" (knn g "a" 1 :cosine))
+#+end_src
+
+#+RESULTS:
+: J(a,b) = 0.333
+: knn(a) = @[("b" 0.333333333333333)]
+: knn(a) cosine = @[("b" 0.5)]
+
+Both =b= and =c= score 1/3 against =a=, so =knn= returns whichever comes first in the scan order (=b= in this case). The tie is arbitrary rather than meaningful.
+
+* References
+- Jaccard 1901, “Étude comparative de la distribution florale”.
+- Cover & Hart 1967, nearest-neighbour pattern classification.
+- Newman 2018, /Networks/ Ch.7 (similarity).

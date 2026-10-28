@@ -1,0 +1,39 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/hamiltonian.janet
+#+title: Hamiltonian Paths
+
+*Modules:* [[file:../../graphs/hamiltonian.janet][hamiltonian]]
+
+Hamiltonian paths visit every vertex of a graph exactly once. The backtracking search is exact and intended for use with small graphs. The =hamiltonian-possible?= test for necessary conditions is used to avoid unneccesary searching. The =hamiltonian-dirac-sufficient?= is useful when a yes/no answer is required, or to know that a heuristic is operating on a graph that does have a Hamiltonian cycle.
+
+* Summary
+
+- =hamiltonian-possible?= — necessary connectivity and degree checks. accepts =:cycle= (default) or =:path=.
+- =hamiltonian-dirac-sufficient?= — Dirac's theorem, which provides an existence guarantee.
+- =hamiltonian-cycle= — a Hamiltonian cycle as a vertex array, or nil.
+- =hamiltonian-path= — a Hamiltonian path as a vertex array, or nil.
+
+* Examples
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def g (make-graph))
+(add-nodes g ["a" "b" "c" "d"])
+(add-edges g [["a" "b"] ["b" "c"] ["c" "d"] ["d" "a"]])
+
+(printf "possible cycle? %p" (hamiltonian-possible? g))
+(printf "cycle: %p" (hamiltonian-cycle g))
+(printf "path: %p" (hamiltonian-path g))
+#+end_src
+
+#+RESULTS:
+: possible cycle? true
+: cycle: @["a" "b" "c" "d"]
+: path: @["a" "b" "c" "d"]
+
+* References
+- Diestel, Ch.10 “Hamilton Cycles”; Bondy & Murty, Ch.18.
+- Dirac 1952 (sufficient condition); Warnsdorff 1837 (heuristic ordering).

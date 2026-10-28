@@ -1,0 +1,64 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/core.janet
+#+title: Core Data Structures
+
+*Modules:* [[file:../../graphs/simple-graph.janet][simple-graph]], [[file:../../graphs/digraph.janet][digraph]], [[file:../../graphs/multigraph.janet][multigraph]], [[file:../../graphs/weighted-graph.janet][weighted-graph]], [[file:../../graphs/tree.janet][tree]], [[file:../../graphs/types.janet][types]], [[file:../../graphs/init.janet][init]]
+
+The library is built around several concrete graph types; =:graph=, =:digraph=, =:multidigraph=, =:weighted-graph=, =:multigraph=, and =:tree=. It covers simple undirected graphs, digraphs, undirected and directed multidigraphs, weighted digraphs, and rooted trees. Multiedges are permitted for =:multigraph= and =:multidigraph=, and parallel arcs are counted per pair.
+
+There is a uniform API for all graph types. The concrete types are defined in [[file:~/code/codeberg/snark/graphs/types.janet][graph/types]] and entry points can be found in [[file:~/code/codeberg/snark/graphs/init.janet][graphs/init]].
+
+* Constructing graphs
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+Every graph type has a constructor which takes zero or more parameters. Nodes (vertices) and edges can be added individually with =add-node= and/or =add-edge=. To add multiple nodes/edges to a graph, it can be more convenient to use =add-nodes= and/or =add-edges=.
+
+#+begin_src janet :session examples :results output
+# create a new empty graph
+(def g (make-graph))
+
+# add some nodes and edges
+(add-nodes g "a" "b" "c" "d")
+(add-edges g ["a" "b"] ["a" "c"] ["b" "c"] ["c" "d"])
+
+(printf "nodes: %p\nedges: %p" (node-count g) (edge-count g))
+(printf "degree(a) = %p" (degree g "a"))
+(printf "neighbours(a) = %s" (string/join (map string (neighbours g "a")) ", "))
+#+end_src
+
+#+RESULTS:
+: nodes: 4
+: edges: 4
+: degree(a) = 2
+: neighbours(a) = b, c
+
+The constructors can accept initialisation data, which is often the tersest option for small graphs.
+
+#+begin_src janet :session examples :results output
+(def d (make-digraph @["s" "t"] @{"s" @{"t" 3}}))
+
+(printf "digraph with %p nodes, edge s->t weight is %p"
+        (node-count d) (edge-weight d "s" "t"))
+#+end_src
+
+#+RESULTS:
+: digraph with 2 nodes, edge s->t weight is 3
+
+* Summary
+
+- Constructors. =make-graph=, =make-digraph=, =make-multidigraph=, =make-weighted-graph=, =make-multigraph=, =make-tree=, =make-weighted-tree=.
+- Mutators. =add-node(s)=, =remove-node(s)=, =add-edge(s)=, =remove-edge(s)=
+- Converters. =digraph-reverse= returns a new digraph with every arc reversed, =tree->digraph= and =weighted-tree->graph= flatten a tree into the corresponding digraph or plain graph.
+
+- =nodes=, =neighbours=, =in-neighbours=, =out-neighbours=, =degree=, =in-degree=, =out-degree=.
+- =has-node?=, =has-edge?=, =node-count=, =edge-count=, =edge-weight=, =self-loops=.
+- =make-distance-matrix= for fixed-size all-pairs distance tables; =distance-matrix-nearest-pair=, =distance-matrix-map=, etc.
+
+=add-node= (singular) and =add-nodes= (mulitple) accept node labels as strings or integers, =add-edges= accepts pairs of nodel labels =[a b]= or =[a b weight]= to create a weighted edge. All mutators return the graph and can be chained. Adding an edge will implicitly create any required nodes, removing a node will also remove any incident edges.
+
+* References
+- Diestel, /Graph Theory/, Ch.1 “The Basics”
+- Bondy & Murty, /Graph Theory/, Ch.1 “Graphs”

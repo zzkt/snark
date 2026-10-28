@@ -1,0 +1,52 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/planarity.janet
+#+title: Planarity
+
+*Modules:* [[file:../../graphs/planarity.janet][planarity]]
+
+Planarity testing by the Demoucron–Malgrange–Pertuiset (DMP) face-splitting algorithm.
+
+Can a graph be drawn without edge crossings? Kuratowski's theorem provides a correctness statement (a graph is planar iff no =K₅= or =K₃,₃= subdivision) and DMP provides an algorithm for planar embedding which is exact, non-backtracking and polynomial.
+
+* Summary
+
+- =is-planar?= — True if an undirected graph can be drawn without edge crossings
+- =planar-faces= — a planar embedding as a list of faces, or =nil= if the graph is non-planar. Faces are produced per biconnected block and together cover every edge. The outermost face can be taken as the largest one.
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+=K₄= is the largest complete planar graph, =K₅= is the smallest complete graph that is not.
+
+#+begin_src janet :session examples :results output
+(defn k-n [n]
+  (def g (make-graph))
+  (add-nodes g (seq [i :range [0 n]] i))
+  (add-edges g (seq [i :range [0 n] j :range [0 n] :when (< i j)] @[i j]))
+  g)
+
+(printf "is K4 planar? %p" (is-planar? (k-n 4)))
+(printf "is K5 planar? %p" (is-planar? (k-n 5)))
+
+(def faces (planar-faces (k-n 4)))
+(printf "K4 embedding: %p faces, boundary lengths %s"
+        (length faces)
+        (string/join (map |(string (length ($ :vs))) faces) " "))
+#+end_src
+
+#+RESULTS:
+: is K4 planar? true
+: is K5 planar? false
+: K4 embedding: 4 faces, boundary lengths 3 3 3 3
+
+=K₄= is 3-connected, so its embedding is tetrahedral; four triangular faces, with the outer face being the mirror of any interior triangle.
+
+* References
+- Diestel, Ch.4 “Planar Graphs”
+- Bondy & Murty, Ch.10.
+- Even 1979, /Graph Algorithms/, Ch.5.
+- Demoucron, Malgrange & Pertuiset 1964 (DMP face-splitting)
+- Kuratowski 1930 (forbidden subdivision); Wagner 1937 (forbidden minor)

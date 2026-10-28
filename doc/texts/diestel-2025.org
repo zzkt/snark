@@ -1,0 +1,439 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+title: Diestel (2025) *Graph Theory*
+
+Reinhard Diestel, *Graph Theory*, 6th ed. (2025) is primarily a theory text, covering theorems and proofs with examples and exercises.
+
+- [[1. The Basics]]
+- [[2. Matching, Covering and Packing]]
+- [[3. Connectivity]]
+- [[4. Planar graphs]]
+- [[5. Colouring]]
+- [[6. Flows]]
+- [[7. Extremal graph theory]]
+- [[8. Infinite graphs]]
+- [[9. Ramsey theory]]
+- [[10. Hamilton cycles]]
+- [[11. Random graphs]]
+- [[12. Graph Minors]]
+
+* Chapter by chapter
+** 1. The Basics
+Graphs, digraphs, multigraphs, bipartite graphs, trees, forests, connectivity, paths and cycles, Euler tours.
+
+- Graph model: =:graph=, =:multigraph=, =:multidigraph=, =:digraph=, =:weighted-graph=, =:tree=
+- Degrees: =degree=, =degree-sequence=, density, self-loops.
+- Path/cycle primitives: =bfs=, =dfs=, =bfs-path=, =graph-path-exists?=, =has-cycle?=, =eulerian-cycle=.
+- Trees & Forests: =count-spanning-trees= (Matrix-Tree), =weighted-graph-mst=.
+
+*** Example
+
+A triangle has a cycle, is 3-colourable, and contains an Euler tour because every vertex has even degree.
+
+#+BEGIN_SRC janet :session diestel :results none
+(import graphs :prefix "")
+#+END_SRC
+
+#+BEGIN_SRC janet :session diestel :results output
+(def tri (make-graph))
+(add-edges tri [["a" "b"] ["b" "c"] ["c" "a"]])
+
+(print "cycle?: " (has-cycle? tri))
+(print "vertex degrees: " (string/join (map |(string (degree tri $)) (nodes tri)) " "))
+(print "Euler tour: " (string/join (eulerian-tour tri) " "))
+(print "node count: " (node-count tri))
+(print "edge count: " (edge-count tri))
+#+END_SRC
+
+#+RESULTS:
+: cycle?: true
+: vertex degrees: 2 2 2
+: Euler tour: a b c
+: node count: 3
+: edge count: 3
+
+** 2. Matching, Covering and Packing
+
+Bipartite matching, Hall's theorem, augmenting paths, the Gallai–Edmonds decomposition, factor-critical graphs, and the packing/covering duality (König, Dilworth, Menger).
+
+- Bipartite matching by augmenting paths (Kuhn): =maximum-bipartite-matching=
+- Hall condition test: =satisfies-hall-condition?=
+- Matching predicates: =is-matching?=, =is-maximal-matching?=, =is-perfect-matching?=, greedy =maximal-matching=
+- Bipartite: =bipartite-sets=, =bipartite-perfect-matching?=
+- Packing/covering duality (König): =minimum-vertex-cover= and =maximum-independent-set= on a bipartite graph
+- Packing: clique enumeration =find-cliques= and =find-all-cliques= (Bron–Kerbosch) packing via cover/independence duality.
+- General (non-bipartite) maximum matching via Edmonds's blossom algorithm: =maximum-matching=, =is-perfect-matching-graph?=
+
+*Unimplemented*: Gallai–Edmonds decomposition and factor-critical structure.
+
+*** Example
+
+König's duality on a small bipartite graph. The max matching and the min vertex cover coincide in size.
+
+#+BEGIN_SRC janet :session diestel :results output
+(def bp (make-graph))
+(add-edges bp [["a" "1"] ["a" "2"] ["b" "2"] ["c" "3"]])
+
+(def sides (bipartite-sets bp))
+(def m (maximum-bipartite-matching bp (sides :x) (sides :y)))
+
+(printf "bipartite sides: %s | %s"
+        (string/join (sort (array/slice (sides :x))) ",")
+        (string/join (sort (array/slice (sides :y))) ","))
+
+(printf "max matching: %p pairs" (length m))
+
+(each p (sort (array/slice m) (fn [a b] (< (string (a 0)) (string (b 0)))))
+  (printf "  %s--%s" (string (p 0)) (string (p 1))))
+
+(print "perfect? " (bipartite-perfect-matching? bp (sides :x) (sides :y)))
+#+END_SRC
+
+#+RESULTS:
+: bipartite sides: a,b,c | 1,2,3
+: max matching: 3 pairs
+:   a--1
+:   b--2
+:   c--3
+: perfect? true
+
+The min vertex cover equals the max matching and the max independent set equals =|V| - ν=
+
+#+BEGIN_SRC janet :session diestel :results output
+(def k22 (make-graph))
+(add-edges k22 [["a" "x"] ["a" "y"] ["b" "x"] ["b" "y"]])
+
+(def sides (bipartite-sets k22))
+
+(def m (maximum-bipartite-matching k22 (sides :x) (sides :y)))
+
+(def cover (minimum-vertex-cover k22 (sides :x) (sides :y)))
+
+(def indep (maximum-independent-set k22 (sides :x) (sides :y)))
+
+(print "matching size: " (length m))
+(print "vertex cover: " (string/join (sort (array/slice cover)) ","))
+(print "independent set: " (string/join (sort (array/slice indep)) ","))
+(print "|V|-nu: " (- (node-count k22) (length m)))
+#+END_SRC
+
+#+RESULTS:
+: matching size: 2
+: vertex cover: a,b
+: independent set: x,y
+: |V|-nu: 2
+
+*** Example
+
+Edmonds blossom on a non-bipartite graph.
+
+The Petersen graph has a perfect matching, with two disjoint triangles, each an odd cycle, hence a genuine blossom.
+
+#+BEGIN_SRC janet :session diestel :results output
+(def petersen (make-graph))
+(add-edges petersen [["0" "1"] ["0" "2"] ["0" "5"]
+                     ["1" "3"] ["1" "6"] ["2" "4"] ["2" "7"]
+                     ["3" "5"] ["3" "8"] ["4" "6"] ["4" "9"]
+                     ["5" "7"] ["6" "9"] ["7" "8"] ["8" "9"]])
+
+(printf "Petersen max matching: %p pairs" (length (maximum-matching petersen)))
+(printf "Petersen perfect? %p" (is-perfect-matching-graph? petersen))
+#+END_SRC
+
+#+RESULTS:
+: Petersen max matching: 5 pairs
+: Petersen perfect? true
+
+Two disjoint triangles. nu = 2, not 3, since each C3 admits only one edge.
+
+#+BEGIN_SRC janet :session diestel :results output
+(def blossom (make-graph @{}))
+(add-edges blossom [["a" "b"] ["b" "c"] ["c" "a"]
+                    ["p" "q"] ["q" "r"] ["r" "p"]])
+
+(def bm (maximum-matching blossom))
+
+(printf "2xC3 max matching: %p pairs" (length bm))
+(printf "2xC3 valid matching? %p" (is-matching? blossom bm))
+#+END_SRC
+
+#+RESULTS:
+: 2xC3 max matching: 2 pairs
+: 2xC3 valid matching? true
+
+** 3. Connectivity
+
+Menger's theorem and its consequences, k-connected graphs, blocks, ear decompositions, vertex/edge cuts.
+
+- =connected-components=, =connected?=, =graph-path-exists?=, =graph-shortest-path=
+- =articulation-points=, =bridges=, =biconnected-components=
+- =edge-connectivity=, =vertex-connectivity= – Menger minima, computed by max-flow.
+
+*Unimplemented:* ear decompositions
+
+*** Example
+
+Edge connectivity of a cycle C4 is 2, removing a single edge leaves it connected.
+
+#+BEGIN_SRC janet :session diestel :results output
+(def c4 (make-graph))
+(add-edges c4 [["1" "2"] ["2" "3"] ["3" "4"] ["4" "1"]])
+
+(print "edge-connectivity C4: " (edge-connectivity c4))
+(print "vertices: " (node-count c4))
+#+END_SRC
+
+#+RESULTS:
+: edge-connectivity C4: 2
+: vertices: 4
+
+** 4. Planar graphs
+
+Euler's formula, Kuratowski/Wagner characterization, planar embeddings, planar embedding construction, dual graphs, and face enumeration.
+
+- =is-planar?= checks planarity via Demoucron–Malgrange–Pertuisot (DMP)
+
+*Unimplemented*: planar embedding construction, dual graphs, and face enumeration
+
+*** Example
+
+The two Kuratowski obstructions are the smallest non-planar graphs. They fail planarity tests for different reasons; $K_5$ is rejected with Euler's bound $m \leq 3n-6$, but $K_{3,3}$ satisfies the bound ($9 \leq 12$) and requires the face-splitting test. The $3 \times 3$ grid, with 12 edges and 9 vertices, is planar.
+
+#+BEGIN_SRC janet :session diestel :results output
+(def k5 (make-graph))
+(add-edges k5 [[1 2] [1 3] [1 4] [1 5]
+               [2 3] [2 4] [2 5]
+               [3 4] [3 5]
+               [4 5]])
+
+(def k33 (make-graph))
+(add-edges k33 [["a1" "b1"] ["a1" "b2"] ["a1" "b3"]
+                ["a2" "b1"] ["a2" "b2"] ["a2" "b3"]
+                ["a3" "b1"] ["a3" "b2"] ["a3" "b3"]])
+
+(def grid33 (make-graph))
+(add-nodes grid33 (range 9))
+(each i (range 9)
+  (when (not= 2 (% i 3)) (add-edge grid33 i (+ i 1)))
+  (when (< i 6) (add-edge grid33 i (+ i 3))))
+
+(printf "    K5: n=%d, m=%d, 3n-6=%d, planar is %p"
+        5 (edge-count k5) (- (* 3 5) 6) (is-planar? k5))
+
+(printf "  K3,3: n=%d, m=%d, 3n-6=%d, planar is %p"
+        6 (edge-count k33) (- (* 3 6) 6) (is-planar? k33))
+
+(printf "grid33: n=%d, m=%d, 3n-6=%d, planar is %p"
+        (node-count grid33) (edge-count grid33)
+        (- (* 3 9) 6) (is-planar? grid33))
+#+END_SRC
+
+#+RESULTS:
+:     K5: n=5, m=10, 3n-6=9, planar is false
+:   K3,3: n=6, m=9, 3n-6=12, planar is false
+: grid33: n=9, m=12, 3n-6=21, planar is true
+
+** 5. Colouring
+
+Greedy colouring, the chromatic number, Vizing's theorem,  Brooks' theorem, Turán graphs.
+
+- =greedy-colour= via Welsh–Powell, =is-proper-colouring?=
+- exact =chromatic-number= via branch & bound
+- =make-turan-graph=, =turan-number=
+- edge colouring with =edge-chromatic-number=, =vizing-edge-colour=, and =edge-colour-greedy=.
+
+*Unimplemented*: List colouring, Brooks-type bounds, chi-boundedness, and perfect-graph
+
+*** Example
+
+Chromatic number of a triangle is 3, a path is 2
+
+#+BEGIN_SRC janet :session diestel :results output
+(print "triangle chi:  " (chromatic-number tri))
+
+(def p4 (make-graph))
+(add-edges p4 [["1" "2"] ["2" "3"] ["3" "4"]])
+
+(print "path P4 chi: " (chromatic-number p4))
+(print "turan T(4,2): " (edge-count (make-turan-graph 4 2)))
+#+END_SRC
+
+#+RESULTS:
+: triangle chi:  3
+: path P4 chi: 2
+: turan T(4,2): 4
+
+** 6. Flows
+
+Proof of max-flow min-cut, theory of integer and nowhere-zero flows.
+
+- =edmonds-karp=, =dinic=, =min-cut= on capacity digraphs implement the max-flow/min-cut theorem algorithmically.
+- =edge-connectivity= and =vertex-connectivity=
+
+*Unimplemented*: The group-flow, nowhere-zero-flows, flow-colouring duality
+
+*** Example
+
+Max-flow and min-cut on a two-arc bottleneck
+
+#+BEGIN_SRC janet :session diestel :results output
+(def fl (make-digraph))
+(add-edges fl [["s" "a" 3] ["s" "b" 2] ["a" "t" 2] ["b" "t" 3] ["a" "b" 1]])
+
+(def r (edmonds-karp fl "s" "t"))
+(def mc (min-cut fl "s" r))
+
+(print "max-flow value: " (r :flow))
+(print "min-cut capacity: " (mc :capacity))
+(print "cut set: " (string/join (mc :cut-set) ","))
+#+END_SRC
+
+#+RESULTS:
+: max-flow value: 5
+: min-cut capacity: 5
+: cut set: a,b,t
+
+** 7. Extremal graph theory
+
+Turán's theorem and the Turán graph, Hadwiger’s conjecture, The Szemerédi regularity lemma, sampling/partition.
+
+- Turán graph — =make-turan-graph=, =turan-number=
+
+*Unimplemented:* The Szemerédi regularity lemma and the sampling/partition machinery
+
+*** Example
+
+Turán's theorem says $\text{ex}(n, K_{r+1})$ is equal to the edge count of the complete equitable $r$-partite graph $T(n,r)$, which =turan-number= and =make-turan-graph= compute independently. Agreement across $n$ and $r$ can be checked rather than assumed.
+
+#+BEGIN_SRC janet :session diestel :results output
+(printf "%3s %3s %14s %12s" "n" "r" "ex(n,K_r+1)" "|E(T(n,r))|")
+
+(each [n r] [[6 2] [7 2] [9 2] [10 3] [12 4]]
+  (printf "%3d %3d %11d %11d" n r
+          (turan-number n r)
+          (edge-count (make-turan-graph n r))))
+
+(printf "\nT(6,2) chi=%d (K3-free, bipartite)"
+        (chromatic-number (make-turan-graph 6 2)))
+
+(printf "T(6,3) chi=%d (K4-free, 3-partite)"
+        (chromatic-number (make-turan-graph 6 3)))
+#+END_SRC
+
+#+RESULTS:
+:   n   r    ex(n,K_r+1)  |E(T(n,r))|
+:   6   2           9           9
+:   7   2          12          12
+:   9   2          20          20
+:  10   3          33          33
+:  12   4          54          54
+: T(6,2) chi=2 (K3-free, bipartite)
+: T(6,3) chi=3 (K4-free, 3-partite)
+
+** 8. Infinite graphs
+
+Theory of infinite graphs, ends, normal spanning trees, compactness, Rado's selection.
+
+*Unimplemented:* the library is finite.
+
+** 9. Ramsey theory
+
+Ramsey numbers, Erdős–Szekeres, gradient of colourings.
+
+*Unimplemented:* computing Ramsey numbers is generally infeasible.
+
+** 10. Hamilton cycles
+
+Hamilton cycle, Hamilton path, Hamiltonian, sufficient conditions. Theorems: Dirac, Ore, Pósa.
+
+- =hamiltonian-cycle= and =hamiltonian-path= give exact backtracking search on general undirected graphs
+- =hamiltonian-path-dag= for directed acyclic graphs
+- =hamiltonian-possible?= predicate for necessary conditions (per-vertex degree and connectivity), and =hamiltonian-dirac-sufficient?= to check Dirac's sufficient condition (min degree ≥ n/2)
+- =tournament-hamiltonian-path= since every tournament has a Hamilton(ian) path
+
+*** Example
+
+Dirac's condition (minimum degree at least $n/2$) is sufficient but not necessary.
+
+$W_5$ has minimum degree 3 on 6 vertices, which satisfies the condition and is Hamiltonian, while $C_5$ has minimum degree 2, fails it, and is also Hamiltonian. The bowtie (two triangles meeting at a single cut vertex) passes =hamiltonian-possible?= since the vertices, connectivity and minimum degree conditions all hold, yet has no Hamilton cycle.
+
+#+BEGIN_SRC janet :session diestel :results output
+(def c5 (make-graph))
+(add-edges c5 [[1 2] [2 3] [3 4] [4 5] [5 1]])
+
+(def bowtie (make-graph))
+(add-edges bowtie [[1 2] [2 3] [3 1] [3 4] [4 5] [5 3]])
+
+# wheel W5: a 5-cycle plus a hub joined to all five
+(def w5 (make-graph))
+(add-edges w5 [["h" 1] ["h" 2] ["h" 3] ["h" 4] ["h" 5]
+              [1 2] [2 3] [3 4] [4 5] [5 1]])
+
+(printf "is W5 dirac-sufficient? %p (min degree %d >= n/2 = %.1f)"
+        (hamiltonian-dirac-sufficient? w5)
+        (min ;(map |(degree w5 $) (nodes w5)))
+        (/ (node-count w5) 2.0))
+
+(printf "is C5 dirac-sufficient? %p (fails, yet C5 is Hamiltonian)"
+        (hamiltonian-dirac-sufficient? c5))
+
+(printf "C5 cycle: %p" (hamiltonian-cycle c5))
+
+(printf "bowtie degrees: %p"
+        (sort (map |(degree bowtie $) (nodes bowtie))))
+
+(printf "bowtie possible: %p (all necessary conditions hold)"
+        (hamiltonian-possible? bowtie))
+
+(printf "bowtie cycle: %p (exact search finds none)"
+        (hamiltonian-cycle bowtie))
+
+(printf "bowtie path: %p (a Hamilton path still exists)"
+        (hamiltonian-path bowtie))
+#+END_SRC
+
+#+RESULTS:
+: is W5 dirac-sufficient? true (min degree 3 >= n/2 = 3.0)
+: is C5 dirac-sufficient? false (fails, yet C5 is Hamiltonian)
+: C5 cycle: @[1 2 3 4 5]
+: bowtie degrees: @[2 2 2 2 4]
+: bowtie possible: true (all necessary conditions hold)
+: bowtie cycle: nil (exact search finds none)
+: bowtie path: @[1 2 3 4 5] (a Hamilton path still exists)
+
+** 11. Random graphs
+
+- =random-graph=, The G(n,p) model
+- =random-graph-edges= G(n,m) plus =barabasi-albert= preferential attachment
+- All three accept an optional seed for reproducibility
+
+*** Example
+
+Two features of =random-graph=, one asymptotic and one exact.
+
+For $p=c/n$ the number of isolated vertices in $G(n,p)$ converges to a Poisson distribution of mean $e^(-c)$ so their proportion tends to $e^(-c) > 0$. For a single small sample the edge count is checked against its binomial expectation $p·C(n,2)$.
+
+#+BEGIN_SRC janet :session diestel :results output
+(def g (random-graph 12 0.4 7))
+
+(print "nodes: " (node-count g))
+(print "edges: " (edge-count g))
+(print "expected p*C(12,2): " (math/round (* 0.4 66)))
+(print "deterministic: " (edge-count (random-graph 12 0.4 7)))
+(print "isolated vertices: "
+       (length (filter (fn [u] (zero? (degree g u))) (nodes g))))
+#+END_SRC
+
+#+RESULTS:
+: nodes: 12
+: edges: 26
+: expected p*C(12,2): 26
+: deterministic: 26
+: isolated vertices: 0
+
+Note: $c = 0.4·12 = 4.8$, so the limiting proportion of isolated vertices is $e^(-4.8) ≈ 0.008$ the zero observed in a 12-vertex sample is consistent with that, but the sample is too small to illustrate the Poisson limit.
+
+** 12. Graph Minors
+
+Graph minors, topological minors, tree-decompositions, tree-width, well-quasi-ordering, and tangles.
+
+*Unimplemented*: tree-decomposition and tree-width (NP-hard in general, bounded for small instances); minor and topological-minor tests; separation/tangle machinery (=graphs/cuts= provides degree and neighbourhood-expansion measures, but not bramble/tangle)

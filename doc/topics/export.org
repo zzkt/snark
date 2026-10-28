@@ -1,0 +1,76 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/export.janet
+#+title: Graph Export
+
+*Modules:* [[file:../../graphs/export][graphs/export]]
+
+Serialise graphs for use with external tools.
+
+- DOT and GEXF output strings or files suitable for graphviz or Gephi
+- The TikZ exporter emits a TikZ block suitable for LaTeX documents
+- The cytoscape target produces a standalone HTML page using cytoscape.js
+
+* Summary
+- =to-dot= — Graphviz DOT source (as string)
+- =to-gexf= — GEXF XML suitable for gephi
+- =to-tikz= — TikZ picture for LaTeX
+- =to-svg= — SVG output via Graphviz (via a dot file rendered with =dot=, =neato=, =circo=, =fdp=, =sfdp=, =twopi=, =osage= or =patchwork=, as per =:layout=), or internal renderer for circular-arc and poly-arc layouts.
+- =to-cytoscape= — a self-contained HTML page embedding the graph via cytoscape.js
+
+* Examples
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output :wrap SRC dot
+(def w (make-digraph))
+(add-nodes w "a" "b")
+(add-edges w ["a" "b" 1])
+
+(print (to-dot w))
+#+end_src
+
+#+RESULTS:
+#+begin_SRC dot
+digraph G {
+  ranksep=1.0;
+  pad=0.5;
+  nodesep=0.5;
+  rankdir=LR;
+  splines=true;
+  fontname="Fira Sans";
+  node [shape="ellipse",penwidth="1.5",fontname="Fira Sans",fillcolor="#FFF3CD",style="filled"];
+  "a";
+  "b";
+  "a" -> "b" [weight="1",penwidth="1",label="1",fontname="Fira Sans",color="#27AE60"]
+}
+
+#+end_SRC
+
+A TikZ picture from a =:weighted-graph= which can be used for the phylogram family
+
+#+begin_src janet :session examples :results output :wrap src latex
+(def t (make-weighted-graph))
+(add-nodes t "root" "a" "b")
+(add-edges t ["root" "a" 2] ["root" "b" 1])
+
+(print (to-tikz t :layout "phylogram" :root "root" :label-edges false))
+#+end_src
+
+#+RESULTS:
+#+begin_src latex
+\begin{tikzpicture}[>=latex]
+  \node[anchor=west, inner sep=1.5pt, text=black!80] (b) at (1.0000,-1.0000) {b};
+  \node[anchor=west, inner sep=1.5pt, text=black!80] (a) at (2.0000,0.0000) {a};
+  \node[circle, fill=black!70, line width=0.5pt, inner sep=0pt, minimum size=3.5pt] (root) at (0.0000,-0.5000) {};
+  \draw[semithick] (root.south) |- (2.0000,0.0000);
+  \draw[semithick] (root.north) |- (1.0000,-1.0000);
+\end{tikzpicture}
+
+#+end_src
+
+* References
+- [[https://graphviz.org/documentation/][graphviz.org]] documentation
+- [[https://docs.gephi.org/desktop/User_Manual/Import/GEXF_File_Format/][GEXF 1.2]] spec, [[https://gephi.org/][gephi.org]]
+- [[https://js.cytoscape.org/][cytoscape.js]] documentation

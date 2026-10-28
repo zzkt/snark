@@ -1,0 +1,205 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+title: Snark — A Graph Library
+
+Summaries, links and references.
+
+* Contents
+
+- [[file:topics/core.org][Core data structures]]
+- [[file:topics/traversal.org][Traversal & ordering]]
+- [[file:topics/shortest-paths.org][Shortest paths & weighted graphs]]
+- [[file:topics/dag.org][DAG analysis & causal inference]]
+- [[file:topics/hamiltonian.org][Hamiltonian paths]]
+- [[file:topics/cycles.org][Cycle analysis]]
+- [[file:topics/tournaments.org][Tournaments]]
+- [[file:topics/flow-cut.org][Flow & cut ]]
+- [[file:topics/centrality.org][Centrality & ranking]]
+- [[file:topics/clustering.org][Community detection ]]
+- [[file:topics/connectivity.org][Connectivity]]
+- [[file:topics/planarity.org][Planarity]]
+- [[file:topics/metrics.org][Metrics]]
+- [[file:topics/similarity.org][Similarity]]
+- [[file:topics/cores.org][Cores & shells]]
+- [[file:topics/colouring.org][Graph colouring ]]
+- [[file:topics/matching.org][Matching, cliques & coverings]]
+- [[file:topics/spanning-tree.org][Spanning trees]]
+- [[file:topics/random-graphs.org][Random graphs]]
+- [[file:topics/sequence.org][Degree sequences]]
+- [[file:topics/strings.org][Suffix trees & strings]]
+- [[file:topics/petri-net.org][Petri nets]]
+- [[file:topics/other.org][Other algorithms]]
+- [[file:topics/import.org][Graph import]]
+- [[file:topics/export.org][Graph export]]
+- [[file:topics/layout.org][Graph layout]]
+
+* Core Data Structures
+
+Concrete graph types; =:graph=, =:digraph=, =:multigraph=, =:multidigraph=, =:weighted-graph=, =:tree= and =:weighted-tree=, which provide a uniform API (e.g. =add-node=, =add-edge=, =nodes=, =neighbours=, =degree=, =edge-count=, etc)
+
+Details: [[file:topics/core.org][core]]
+
+* Traversal & ordering
+
+BFS/DFS, topological sort (Kahn), Kosaraju SCC, =semi-connected?=, Eulerian circuits.
+
+Details: [[file:topics/traversal.org][traversal]]
+
+* Cycle analysis
+
+Acyclicity, undirected cycle-space basis, simple-cycle enumeration.
+
+Details: [[file:topics/cycles.org][cycles]]
+
+* DAG analysis & causal inference
+
+Acyclicity & periodicity, topological generations, ancestors/descendants, transitive closure and reduction, longest paths, antichains, and causal primitives (colliders, v-structures).
+
+Details: [[file:topics/dag.org][dag]]
+
+* Tournaments
+
+Recognition, score sequences (Landau), kings, and the transitive/regular/strong constructions.
+
+Details: [[file:topics/tournaments.org][tournaments]]
+
+* Flow & cut
+
+max-flow (Edmonds–Karp, Dinic), min s–t cut, and expansion-family cut statistics; conductance, edge/node expansion, and volume.
+
+Details: [[file:topics/flow-cut.org][flow-cut]]
+
+* Centrality & ranking
+
+Degree, betweenness (Brandes), closeness, harmonic, eigenvector, Katz and PageRank.
+
+Details: [[file:topics/centrality.org][centrality]]
+
+* Community detection
+
+Multi-level Louvain and Leiden refinement for community detection.
+
+Details: [[file:topics/clustering.org][clustering]]
+
+* Connectivity
+
+Weak/strong components, condensation, bridges, articulation points, biconnected components, vertex/edge connectivity, and offline Tarjan LCA.
+
+Details: [[file:topics/connectivity.org][connectivity]]
+
+* Planarity
+
+Planarity tests for undirected graphs, Demoucron Malgrange Pertuiset (DMP)
+
+Details: [[file:topics/planarity.org][planarity]]
+
+* Petri nets
+
+Place/transition nets with weighted arcs, firing semantics with capacities, reachability and state spaces, Karp–Miller coverability, liveness, and exact invariants.
+
+Details: [[file:topics/petri-net.org][petri-net]]
+
+* Metrics
+
+Density, average degree, diameter/radius/center, average path length, transitivity, and  clustering.
+
+Details: [[file:topics/metrics.org][metrics]]
+
+* Similarity
+
+Jaccard and cosine neighbourhood similarity, brute-force k-NN.
+
+Details: [[file:topics/similarity.org][similarity]]
+
+* Cores & shells
+
+Core numbers by minimum-degree peeling, onion ordering, and the k-shell, k-crust, k-corona layers.
+
+Details: [[file:topics/cores.org][cores]]
+
+* Graph colouring
+
+Greedy colouring (Welsh–Powell) and chromatic number, edge colouring with Vizing, and the Turán extremal constructions.
+
+Details: [[file:topics/colouring.org][colouring]]
+
+* Matching, cliques & coverings
+
+Edmonds' blossom for general graphs, bipartite matchings, König vertex-cover/independent-set duality, Hall's condition, and clique enumeration.
+
+Details: [[file:topics/matching.org][matching]]
+
+* Spanning trees
+
+Spanning-tree counts and BEST Eulerian circuit counts via the Laplacian.
+
+Details: [[file:topics/spanning-tree.org][spanning-tree]]
+
+* Random graphs
+
+G(n,p) and G(n,m) Erdős–Rényi sampling plus Barabási–Albert preferential attachment.
+
+Details: [[file:topics/random-graphs.org][random-graphs]]
+
+* Degree sequences
+
+Graphicality tests, Erdős–Gallai, Havel–Hakimi, and the multi/pseudo/digraphical relaxations.
+
+Details: [[file:topics/sequence.org][sequence]]
+
+* Shortest paths & weighted graphs
+
+Dijkstra shortest paths, Prim MST, all-pairs distance statistics, Floyd–Warshall.
+
+Details: [[file:topics/shortest-paths.org][shortest-paths]]
+
+* Suffix trees & strings
+
+Suffix trees and compressed suffix trees (CST) for exact pattern occurrence queries and suffix-array navigation.
+
+Details: [[file:topics/strings.org][strings]]
+
+* Hamiltonian paths
+
+Hamilton(ian) cycle and path search with Dirac's sufficient condition and deterministic backtracking.
+
+Details: [[file:topics/hamiltonian.org][hamiltonian]]
+
+* Other algorithms
+
+Binary min-heap and offline LCA.
+
+Details: [[file:topics/other.org][other]]
+
+* Graph import
+
+Import graphs from adjacency lists/matrices, DOT and GEXF formats, and House of Graphs.
+
+Details: [[file:topics/import.org][import]]
+
+* Graph export
+
+Deterministic (mostly) DOT, GEXF, SVG, TikZ (LaTeX), and self-contained cytoscape.js HTML.
+
+Details: [[file:topics/export.org][export]]
+
+* Graph layout
+
+Hierarchical layering; force-directed and spring placement; circle, tree, radial, orthogonal, spectral layouts; Lombardi style circular-arc and poly-arc drawings; and various rectilinear phylograms.
+
+Details: [[file:topics/layout.org][layout]]
+
+* References
+
+The full bibliography can be found in [[file:references.bib][references.bib]]. Textbooks in [[file:texts/diestel-2025.org][Diestel]], [[file:texts/bondy-murty-2008.org][Bondy-Murty]], [[file:texts/bollobas-1998.org][Bollobas]], [[file:texts/zhao-2023.org][Zhao]] and [[file:texts/newman-networks.org][Newman]]. Specific references can be found at the end of each topic file.
+
+- Diestel (2025) *Graph Theory*, 6th ed. Springer GTM-173.
+- Bondy & Murty (2008) *Graph Theory*. Springer GTM-244.
+- Bollobás (1998) *Modern Graph Theory*. Springer GTM-184.
+- Zhao (2023). *Graph Theory and Additive Combinatorics*. Cambridge University Press.
+- Cormen, Leiserson, Rivest & Stein (2022) *Introduction to Algorithms*, 4th ed. MIT Press.
+
+*Networks in particular*
+- Newman (2018) *Networks*, 2nd ed. Oxford University Press.
+
+*Graph Drawing and Visualization*
+- Tamassia (2013) *Handbook of Graph Drawing and Visualization*. CRC Press

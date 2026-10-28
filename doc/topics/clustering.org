@@ -1,0 +1,75 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/clustering.janet
+#+title: Community Detection
+
+*Modules:* [[file:../../graphs/clustering.janet][clustering]]
+
+Modularity-based clustering of directed graphs.
+
+The blocks of a “two cliques joined by one edge” graph are recovered as distinct communities. Modularity-based methods do not resolve overlapping communities. For dense or weighted networks normalise weights first.
+
+* Summary
+
+- =louvain= — multi-level Louvain where every accepted move strictly raises modularity.
+- =leiden= — Louvain plus one refinement pass that repairs nodes locked into a suboptimal community during aggregation.
+- =community-improve= (an individual local-moving pass) and =aggregate= (the super-node collapse) are building blocks that are not exported from the =graphs= umbrella but are available via =(import graphs/clustering :prefix "")=.
+
+Input digraphs must be symmetric (or undirected edges supplied in both directions)
+
+* Examples
+
+The classic “two triangles joined by a single edge” instance. Note that each undirected edge is written twice (once per direction) to satisfy the symmetry requirement
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def g (make-digraph))
+(add-nodes g "a" "b" "c" "d" "e" "f")
+(add-edges g [["a" "b"] ["b" "a"]
+              ["a" "c"] ["c" "a"]
+              ["b" "c"] ["c" "b"]
+              ["d" "e"] ["e" "d"]
+              ["d" "f"] ["f" "d"]
+              ["c" "d"] ["d" "c"]])
+
+(def community (louvain g))
+
+(printf "Louvain communities: %s"
+        (string/join
+         (map |(string/join (sort $) ",")
+              (values (group-by (fn [n] (get community n))
+                                (keys community)))) " | "))
+#+end_src
+
+#+RESULTS:
+: Louvain communities: a,b,c | d,e,f
+
+Leiden refinement on the same graph which may split or reassign communities from Louvain.
+
+#+begin_src janet :session examples :results output
+(def g2 (make-digraph))
+(add-nodes g2 ["a" "b" "c" "d" "e" "f"])
+(add-edges g2 [["a" "b"] ["b" "a"]
+               ["a" "c"] ["c" "a"]
+               ["b" "c"] ["c" "b"]
+               ["d" "e"] ["e" "d"]
+               ["d" "f"] ["f" "d"]
+               ["c" "d"] ["d" "c"]])
+
+(def community2 (leiden g2))
+
+(printf "Leiden communities: %s"
+        (string/join
+         (map |(string/join (sort $) ",")
+              (values (group-by (fn [n] (get community2 n))
+                                  (keys community2)))) " | "))
+#+end_src
+
+#+RESULTS:
+: Leiden communities: a,b,c | d,e,f
+
+* References
+- Blondel, Guillaume, Lambiotte & Lefebvre 2008, “Fast unfolding of communities in large networks”
+- Traag, Waltman & van Eck 2019, “From Louvain to Leiden”

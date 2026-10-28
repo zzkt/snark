@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="515.7" height="413.5" viewBox="0 0 515.7 413.5">
+  <g stroke="#334155" stroke-width="1.8">
+    <path d="M 306.00 200.18 A 33.29 33.29 0 1 0 371.75 190.97 A 33.69 33.69 0 0 1 433.30 166.06" stroke="#334155" fill="none"/>
+    <path d="M 306.00 200.18 L 306.00 200.18 A 76.95 76.95 0 0 1 201.33 249.91" stroke="#334155" fill="none"/>
+    <path d="M 306.00 200.18 A 70.84 70.84 0 1 0 195.85 138.88 A 100.42 100.42 0 0 1 113.46 234.29" stroke="#334155" fill="none"/>
+    <path d="M 433.30 166.06 A 60.36 60.36 0 1 0 418.00 46.87 A 376.15 376.15 0 0 1 304.20 54.90" stroke="#334155" fill="none"/>
+    <path d="M 433.30 166.06 A 131.38 131.38 0 0 0 419.86 251.24 A 68.74 68.74 0 0 1 378.51 326.90" stroke="#334155" fill="none"/>
+    <path d="M 226.25 145.63 A 1088.90 1088.90 0 0 0 245.57 332.78 A 16.26 16.26 0 0 0 277.44 333.15" stroke="#334155" fill="none"/>
+    <path d="M 134.77 129.86 A 67.76 67.76 0 1 0 63.37 243.75 A 263.26 263.26 0 0 1 166.97 329.40" stroke="#334155" fill="none"/>
+    <path d="M 134.77 129.86 A 30.33 30.33 0 0 0 147.38 159.70 A 127.62 127.62 0 0 1 201.33 249.91" stroke="#334155" fill="none"/>
+    <path d="M 304.20 54.90 A 53.93 53.93 0 0 0 204.85 59.30 A 119.59 119.59 0 0 1 134.77 129.86" stroke="#334155" fill="none"/>
+    <path d="M 304.20 54.90 A 574.21 574.21 0 0 1 226.25 145.63" stroke="#334155" fill="none"/>
+    <path d="M 378.51 326.90 A 71.91 71.91 0 0 1 252.33 363.99 A 99.13 99.13 0 0 0 166.97 329.40" stroke="#334155" fill="none"/>
+    <path d="M 378.51 326.90 A 57.01 57.01 0 0 0 327.21 317.59 A 3351.47 3351.47 0 0 0 277.44 333.15" stroke="#334155" fill="none"/>
+    <path d="M 201.33 249.91 A 33.08 33.08 0 0 0 219.70 309.53 A 91.47 91.47 0 0 1 277.44 333.15" stroke="#334155" fill="none"/>
+    <path d="M 113.46 234.29 A 59.04 59.04 0 0 1 132.87 142.90 A 101.55 101.55 0 0 1 226.25 145.63" stroke="#334155" fill="none"/>
+    <path d="M 113.46 234.29 A 415.63 415.63 0 0 0 94.57 307.53 A 38.15 38.15 0 0 0 166.97 329.40" stroke="#334155" fill="none"/>
+  </g>
+  <g>
+    <circle cx="306.00" cy="200.18" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="306.00" y="200.18" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">0</text>
+    <circle cx="433.30" cy="166.06" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="433.30" y="166.06" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">1</text>
+    <circle cx="304.20" cy="54.90" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="304.20" y="54.90" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">2</text>
+    <circle cx="134.77" cy="129.86" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="134.77" y="129.86" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">3</text>
+    <circle cx="201.33" cy="249.91" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="201.33" y="249.91" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">4</text>
+    <circle cx="113.46" cy="234.29" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="113.46" y="234.29" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">5</text>
+    <circle cx="378.51" cy="326.90" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="378.51" y="326.90" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">6</text>
+    <circle cx="226.25" cy="145.63" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="226.25" y="145.63" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">7</text>
+    <circle cx="166.97" cy="329.40" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="166.97" y="329.40" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">8</text>
+    <circle cx="277.44" cy="333.15" r="10.00" fill="#F8FAFC" stroke="#334155" stroke-width="1.2"/>
+    <text x="277.44" y="333.15" font-family="sans-serif" font-size="10.00" dominant-baseline="central" text-anchor="middle">9</text>
+  </g>
+</svg>

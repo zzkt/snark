@@ -1,0 +1,63 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/connectivity.janet
+#+title: Connectivity
+
+*Modules:* [[file:../../graphs/connectivity.janet][connectivity]], [[file:../../graphs/lca.janet][lca]]
+
+Weak and strong connectivity, cut vertices, bridges, biconnectivity, vertex/edge connectivity, and offline LCA.
+
+Undirected algorithms dispatch on =:any-graph=, digraph variants use weak-components, =bridges= and =articulation-points= are linear-time DFS, LCA is offline Tarjan.
+
+* Summary
+
+- =connected?=, =connected-components= — undirected reachability (for directed types the component reading is weak, so =connected?= means "one weakly-connected component")
+- =multidigraph-connected?=, =multidigraph-connected-components= — weak connectivity of a =:multidigraph=
+- =graph-path-exists?=, =graph-shortest-path=, digraph path and shortest-path reachability queries.
+- =bridges=, =articulation-points=, =biconnected-components= — cut structure (Tarjan DFS)
+- =vertex-connectivity=, =edge-connectivity= — the mins of vertex/edge cuts
+- =tarjan-lca= — offline LCA for many root-anchored queries at once, =tarjan-lca-iterative= uses the same algorithm but avoids recursive DFS, and is safe on deep trees.
+
+* Examples
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+A path of four nodes. one component, three bridges, two cut vertices.
+
+#+begin_src janet :session examples :results output
+(def g (make-graph))
+(add-nodes g "a" "b" "c" "d")
+(add-edges g ["a" "b"] ["b" "c"] ["c" "d"])
+
+(printf "components: %p" (length (connected-components g)))
+(printf "bridges: %p" (length (bridges g)))
+(printf "articulation points: %s"
+        (string/join (sort (map string (articulation-points g))) " "))
+#+end_src
+
+#+RESULTS:
+: components: 1
+: bridges: 3
+: articulation points: b c
+
+LCA on a rooted tree where =r= is the root, =a= and =b= are its children, and =c= is a child of =a=
+
+#+begin_src janet :session examples :results output
+(def t (make-digraph))
+(add-nodes t "r" "a" "b" "c")
+(add-edges t ["r" "a" 1] ["r" "b" 1] ["a" "c" 1])
+
+(def ans (tarjan-lca t "r" @[["c" "b"] ["c" "a"]]))
+
+(printf "LCA(c,b) = %s, LCA(c,a) = %s" (get ans ["c" "b"]) (get ans ["c" "a"]))
+#+end_src
+
+#+RESULTS:
+: LCA(c,b) = r, LCA(c,a) = a
+
+* References
+- Diestel, Ch.3 “Connectivity”
+- Bondy & Murty, Ch.9 “Connectivity” and Ch.5 “Nonseparable Graphs” (cut vertices and blocks).
+- Cormen et al. 2022, Ch.20 (strongly connected components)
+- Tarjan 1972, “Depth-first search and linear graph algorithms”

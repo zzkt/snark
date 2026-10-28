@@ -1,0 +1,45 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/random-graphs.janet
+#+title: Random Graphs
+
+*Modules:* [[file:../../graphs/random-graph.janet][random-graph]]
+
+Erdős–Rényi sampling and preferential attachment growth.
+
+* Summary
+
+All three build an undirected =:graph= with nodes $0…n-1$ and take an optional trailing =seed= for reproducible output.
+
+- =random-graph= — $G(n,p)$: each of the $n(n-1)/2$ possible edges appears independently with probability $p$.
+- =random-graph-edges= — $G(n,m)$: $n$ vertices with exactly $m$ distinct edges, sampled as $m$ distinct slots by Floyd's subset sampling (no rejected draws).
+- =barabasi-albert= — scale-free growth. Begin with a clique of $m_0$ seed vertices, then add each new vertex with $m$ edges attached to existing vertices chosen with probability proportional to degree.
+
+$p=0.0$ yields the empty graph, $p=1.0$ the complete graph. Out-of-range edge counts are rejected rather than silently clamped. =random-graph-edges= raises an error when $m > n(n-1)/2$, and =barabasi-albert= raises an error unless $m \leq m_0 < n$. $G(n,p)$ is the binomial random graph, used for exact thresholds and phase transitions.
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def g (random-graph 8 0.5 42))
+(printf "G(8, 1/2) edges: %p (density %.2f)" (edge-count g) (density g))
+
+(def gm (random-graph-edges 8 10 7))
+(printf "G(8, 10 edges) actual: %p" (edge-count gm))
+
+(def ba (barabasi-albert 20 3 2 7))
+(printf "BA(20) max degree: %p"
+        (reduce (fn [mx u] (max mx (degree ba u))) 0 (nodes ba)))
+#+end_src
+
+#+RESULTS:
+: G(8, 1/2) edges: 16 (density 0.57)
+: G(8, 10 edges) actual: 10
+: BA(20) max degree: 8
+
+* References
+- Diestel, Ch.11 “Random Graphs”
+- Bollobás, /Random Graphs/ (2nd ed.), Chs.1–3.
+- Erdős & Rényi 1959; Barabási & Albert 1999.

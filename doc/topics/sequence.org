@@ -1,0 +1,43 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/sequence.janet
+#+title: Degree Sequences
+
+*Modules:* [[file:../../graphs/sequence.janet][sequence]]
+
+Is a degree sequence realisable as a concrete graph type?
+
+Erdős–Gallai test for simple graphs, Havel–Hakimi is used for construction, with loop or multi-edge relaxations. Directed graphicality uses Fulkerson–Chen–Anstee.
+
+* Summary
+
+- =is-graphical?= — Erdős–Gallai test for simple graphs
+- =is-multigraphical?=, =is-pseudographical?=, =is-digraphical?= — relaxations
+- =is-valid-havel-hakimi?=, =is-valid-erdos-gallai?= — constructive and characterisation tests
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+These predicates take a bare degree sequence, no graph is constructed.
+
+#+begin_src janet :session examples :results output
+(printf "[3 3 3 3 3 3] graphical? %p" (is-graphical? @[3 3 3 3 3 3]))
+
+(printf "[3 3 2 1] graphical? %p" (is-graphical? @[3 3 2 1]))
+
+(printf "[1 1 1 1] (C4) graphical? %p [multi] %p"
+        (is-graphical? @[1 1 1 1]) (is-multigraphical? @[3 3 2 2 2]))
+#+end_src
+
+#+RESULTS:
+: [3 3 3 3 3 3] graphical? true
+: [3 3 2 1] graphical? false
+: [1 1 1 1] (C4) graphical? true [multi] true
+
+=[3 3 2 1]= fails for the simple reason that the degree sum is odd, and every graph has an even degree sum by the handshaking lemma.
+
+* References
+- Erdős & Gallai 1960 (graphicality theorem); Havel 1955; Hakimi 1962.
+- Bollobás, /Modern Graph Theory/, Ch.1

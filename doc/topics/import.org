@@ -1,0 +1,49 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/import.janet
+#+title: Graph Import
+
+*Modules:* [[file:../../graphs/import/adjacency.janet][adjacency]], [[file:../../graphs/import/dot.janet][dot]], [[file:../../graphs/import/gexf.janet][gexf]], [[file:../../graphs/import/hog.janet][hog]]
+
+The import module can be used to convert adjacency data and graph formats into concrete graphs.  =graph-from-adjacency-list= and =graph-from-adjacency-matrix= build graphs from index-based adjacency data; =graph-from-dot=, =graph-from-gexf=, =import-dot=, =import-gexf=, and =import-hog= read serialized graphs as strings or files; =import-file= can be used for =.dot= or =.gexf= files.
+
+* Summary
+
+- =graph-from-adjacency-list= — build a graph from neighbor-index arrays. supports =:directed=, =:weighted=, =:multigraph= and =:labels=
+- =graph-from-adjacency-matrix= — build a graph from a square numeric matrix
+- =graph-from-dot= / =import-dot= — parse Graphviz DOT format text or a DOT file
+- =graph-from-gexf= / =import-gexf= — parse GEXF XML or a GEXF file
+- =import-hog= — import a House of Graphs record by numeric id (requires network access)
+- =import-file= — file importer for DOT or GEXF files
+
+The adjacency constructors are slightly different to the constructors in [[file:core.org][core]], they use index-based data, while =make-graph=, =add-nodes=, =add-edges= use node labels directly.
+
+* Examples
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def g (graph-from-adjacency-list @[@[1 2] @[0 2] @[0 1]]
+                                  :labels @["a" "b" "c"]))
+
+(printf "nodes: %p, edges: %p" (node-count g) (edge-count g))
+(printf "labels: %s" (string/join (map string (nodes g)) " "))
+#+end_src
+
+#+RESULTS:
+: nodes: 3, edges: 3
+: labels: a b c
+
+Fetch the Petersen graph (id 660) using the House of Graphs API
+
+#+begin_src janet :session examples :results output :tangle no
+(def petersen (import-hog 660))
+(printf "nodes: %p, edges: %p, chromatic index: %p"
+        (node-count petersen)
+        (edge-count petersen)
+        (chromatic-index petersen))
+#+end_src
+
+#+RESULTS:
+: nodes: 10, edges: 15, chromatic index: 4

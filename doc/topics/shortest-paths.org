@@ -1,0 +1,92 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/shortest-paths.janet
+#+title: Shortest Paths & Weighted Graphs
+
+*Modules:* [[file:../../graphs/weighted-graph.janet][weighted-graph]], [[file:../../graphs/shortest-paths.janet][shortest-paths]], [[file:../../graphs/distance-matrix.janet][distance-matrix]]
+
+Weighted (undirected) graphs and their path, minimum spanning tree (MST), and algebraic structure.
+
+Dijkstra. MST via Prim's greedy algorithm. All-pairs statistics are computed eagerly.
+
+* Summary
+
+- =weighted-graph-shortest-path= — single-source single-target (Dijkstra)
+- =weighted-graph-all-shortest-paths= — single-source table
+- =weighted-graph-mst= — minimum spanning tree (Prim)
+- =weighted-graph->distance-matrix= — all-pairs as a labelled =:distance-matrix=
+- =graph-diameter=, =graph-center= and =graph-eccentricity= (see: [[file:metrics.org][metrics]])
+- =graph-shortest-path-lengths=, =graph-periphery= — all-pairs-style distance statistics
+- =make-distance-matrix=, =distance-matrix-set=, =distance-matrix-nearest-pair=, =distance-matrix-map=, =distance-matrix-from-fn= — fixed-distance tables
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+Dijkstra choses a path with lower total weight over a path with fewer edges.
+e.g. =A → B → C= path weight is 3, while the direct =A → C= path weight is 5.
+
+#+begin_src janet :session examples :results output
+(def wg (make-weighted-graph))
+(add-nodes wg ["A" "B" "C"])
+(add-edges wg [["A" "B" 1] ["B" "C" 2] ["A" "C" 5]])
+
+(def sp (weighted-graph-shortest-path wg "A" "C"))
+
+(printf "shortest path from A to C: %s (distance %p)"
+        (string/join (get sp 1) "->") (get sp 0))
+
+(printf "distance table from A: %s"
+        (string/join
+         (map |(string/format "%.0f" $0)
+              (values (weighted-graph-all-shortest-paths wg "A"))) " "))
+#+end_src
+
+#+RESULTS:
+: shortest path from A to C: A->B->C (distance 3)
+: distance table from A: 1 0 3
+
+
+MST and distance-matrix
+
+#+begin_src janet :session examples :results output
+(def mg (make-weighted-graph))
+(add-nodes mg ["A" "B" "C" "D"])
+(add-edges mg [["A" "B" 1] ["B" "C" 2] ["C" "D" 3]
+               ["A" "C" 6] ["B" "D" 5]])
+
+(def mst (weighted-graph-mst mg))
+(printf "MST edge count (n-1): %p" (weighted-graph-edge-count mst))
+
+(def dm (make-distance-matrix @["a" "b" "c"] @[[0 4 8] [4 0 2] [8 2 0]]))
+(printf "nearest pair distance: %p" (get (distance-matrix-nearest-pair dm) 2))
+#+end_src
+
+#+RESULTS:
+: MST edge count (n-1): 3
+: nearest pair distance: 2
+
+All-pairs shortest paths via Floyd–Warshall on a weighted graph
+
+#+begin_src janet :session examples :results output
+(def wg2 (make-weighted-graph))
+(add-nodes wg2 ["A" "B" "C" "D"])
+(add-edges wg2 [["A" "B" 1] ["B" "C" 2] ["C" "D" 3]
+                ["A" "C" 6] ["B" "D" 5]])
+
+(def dm2 (weighted-graph->distance-matrix wg2))
+(printf "distance matrix labels: %s" (string/join (get dm2 :names) ", "))
+(printf "A->D distance: %.0f" (get-in dm2 [:matrix 0 3]))
+(printf "B->C distance: %.0f" (get-in dm2 [:matrix 1 2]))
+#+end_src
+
+#+RESULTS:
+: distance matrix labels: A, B, C, D
+: A->D distance: 6
+: B->C distance: 2
+
+* References
+- Cormen et al. (4th ed.), Ch.21 (minimum spanning trees) and Ch.22 (single-source shortest paths).
+- Newman 2018, /Networks/ Ch.8 “Computer algorithms” (BFS and shortest paths)
+- Dijkstra 1959; Prim 1957.

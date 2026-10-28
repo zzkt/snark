@@ -1,0 +1,54 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/cycles.janet
+#+title: Cycle Analysis
+
+*Modules:* [[file:../../graphs/cycles.janet][cycles]]
+
+Cycle detection, enumeration, and the undirected cycle space basis.
+
+* Summary
+- =has-cycle?= — Check for a cycle in any of the graph types.
+- =graph-has-cycle?=, =directed-has-cycle?=, =weighted-graph-has-cycle?= provide undirected and directed predicates. Cycle detection is $O(V+E)$
+- =graph-cycle-basis= — a cycle space basis of an undirected graph (each element is an array of vertices, in traversal order).
+- =graph-k-cycle-count= — count the simple undirected cycles of a fixed length
+- =multidigraph-simple-cycles= — enumerate all simple cycles of a multidigraph (exponential in the worst case)
+
+* Examples
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+A triangle with a pendant edge. one cycle, thus one-element basis.
+
+#+begin_src janet :session examples :results output
+(def g (make-graph))
+(add-nodes g "a" "b" "c" "d")
+(add-edges g ["a" "b"] ["b" "c"] ["c" "a"] ["c" "d"])
+
+(printf "has cycle? %p" (has-cycle? g))
+(printf "cycle basis size: %p" (length (graph-cycle-basis g)))
+#+end_src
+
+#+RESULTS:
+: has cycle? true
+: cycle basis size: 1
+
+An undirected quadrilateral with a chord. two fundamental cycles.
+
+#+begin_src janet :session examples :results output
+(def sq (make-graph))
+(add-nodes sq "a" "b" "c" "d")
+(add-edges sq ["a" "b"] ["b" "c"] ["c" "d"] ["d" "a"] ["a" "c"])
+
+(def basis (graph-cycle-basis sq))
+(printf "basis (%p cycles): %s" (length basis)
+        (string/join (map |(string/join (map string $) "-") basis) "  "))
+#+end_src
+
+#+RESULTS:
+: basis (2 cycles): d-c-b-a  c-b-a
+
+* References
+- Diestel, Ch.1 “The Basics” §1.3 (paths and cycles) and §1.9 (the cycle space)
+- Bondy & Murty, Ch.1 (cycles), Ch.8 (complexity)

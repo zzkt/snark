@@ -1,0 +1,55 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/strings.janet
+#+title: Suffix Trees & Strings
+
+*Modules:* [[file:../../graphs/suffix-tree.janet][suffix-tree]], [[file:../../graphs/cst.janet][cst]]
+
+Exact string search via suffix trees.
+
+Suffix-tree construction follows the classic Ukkonen linear-time build. The CST is a compressed SA/LCP representation, giving the same occurrence queries with a smaller footprint.
+
+A =suffix-tree= is preferable for cheap construction and direct traversal, while a =cst= has a much smaller retained index and provides $O(1)$ LCP queries at the expense of construction time.
+
+* Summary
+
+These two modules are deliberately /not/ exported by the graphs module and need to be imported explicitly. They share a common interface and can be used interchangeably.
+
+- =st/suffix-tree= — a suffix tree of a text.
+- =st/suffix-search= reports every start position of a pattern in a suffix tree.
+- =st/suffix-array=, =st/suffix-tree-edge-labels= — the lexicographic suffix order and edge labels.
+- =cst/cst= — the compact suffix tree (CSA/ISA+LCP over SA intervals).
+- =cst/suffix-array=, =cst/cst-lcp-array= — suffixes and LCP array.
+- =cst/cst-lcp= - LCP between two SA positions
+- =cst/suffix-search=, =cst/cst-children=, =cst/cst-parent= — interval navigation on the tree
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs/suffix-tree :as st)
+(import graphs/cst :as cst)
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def text "banana$")
+
+(printf "suffix array: %s"
+        (string/join (map string (st/suffix-array text)) " "))
+
+(printf "occurrences of 'ana': %s"
+        (string/join (map string (st/suffix-search (st/suffix-tree text) "ana")) " "))
+
+(printf "CST occurrences of 'ana': %s"
+        (string/join (map string (cst/suffix-search (cst/cst text) "ana")) " "))
+
+(printf "root children (CST): %p" (length (cst/cst-children (cst/cst text) 0 6)))
+#+end_src
+
+#+RESULTS:
+: suffix array: 6 5 3 1 0 4 2
+: occurrences of 'ana': 1 3
+: CST occurrences of 'ana': 1 3
+: root children (CST): 4
+
+* References
+- Gusfield 1997, /Algorithms on Strings, Trees, and Sequences/, Chs.5–7.
+- Ukkonen 1995, “On-line construction of suffix trees”.

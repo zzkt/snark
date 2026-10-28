@@ -1,0 +1,108 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/layout.janet
+#+title: Graph Layout
+
+*Modules:* [[file:../../graphs/layout][graphs/layout]], [[file:../../graphs/layout/dag.janet][dag]], [[file:../../graphs/layout/force.janet][force]], [[file:../../graphs/layout/circle.janet][circle]], [[file:../../graphs/layout/tree.janet][tree]], [[file:../../graphs/layout/radial.janet][radial]], [[file:../../graphs/layout/orthogonal.janet][orthogonal]], [[file:../../graphs/layout/spectral.janet][spectral]], [[file:../../graphs/layout/spring.janet][spring]], [[file:../../graphs/layout/polyarc.janet][polyarc]], [[file:../../graphs/layout/lombardi.janet][lombardi]], [[file:../../graphs/layout/phylo.janet][phylo]]
+
+Generate deterministic (mostly) graph drawing coordinates from a graph. There is one file per algorithm family. The =graphs= module exposes every =layout-*= function along with the =graph-layout= entry point.
+
+The layout functions are layout-only, they consume a graph and return coordinates, they do not mutate the graph or decide edge style. Use any of the exporters to draw a graph from a layout.
+
+* Summary
+
+- =layout-dag= — Hierarchical layering for DAGs (Sugiyama-style ranks, crossing minimisation, based on D2/TALA)
+- =layout-force= — Fruchterman–Reingold spring model, deterministic, works on any graph
+- =layout-circle= — nodes placed evenly on a circle
+- =layout-tree= / =layout-radial= — BFS layering as a tree, or concentric rings from a root
+- =layout-orthogonal= — grid placement with orthogonal edge routing
+- =layout-spectral= — Fiedler-eigenvector embedding of the Laplacian
+- =layout-spring= — Fruchterman–Reingold placement with deterministic planar (Tutte) fallback
+- =layout-polyarc= — circular-arc and poly-arc drawing
+- =layout-lombardi= — A poly-arc Lombardi construction (optional strict single-arc)
+- =layout-phylogenetic=, =layout-phylogram=, =layout-phylogenetic-tree=, =layout-unrooted-phylogram=, =layout-unrooted-phylogenetic-tree= — rectilinear dendrograms from weighted trees
+
+The =graph-layout= form can be use to dispatch to any layout using =name= and any =keys= are forwarded to the underlying layout. Every layout returns ={:pos {node [x y]} :eligible true ...}= on success, or ={:eligible false :reason "..."}= if the graph is unsuitable (to deliberately bypass the eligibility heuristics (but not size and connectivity) use =:force true=)
+
+Results can be fed into any of the exporters (see: [[file:export.org][export]]), e.g. =(to-tikz= =:g layout "spring")=
+
+** Eligibility failures
+
+Some layout algortihms have particular requirements and should provide a reason if the given graph does not meet those requirements.
+
+- =empty-or-singleton= - zero or one node
+- =too-large= - more nodes than =:max-nodes=
+- =too-large= - more entries than =:max-edges=, or more arcs than the budget
+- =no-source-or-sink= - the graph is not directed and =:force= was not given
+- =disconnected= - not weakly connected (an edgeless graph, among others)
+- =rank-failed= - the hierarchy ranking raised an error or came back empty (generally indicating a layout bug)
+- =less-than-3-levels= - fewer than three topological levels
+- =one-to-one-hierarchy= - exactly three levels, a single source and sink, with every middle node joined only above and below
+- =no-source-or-sink= - no node of in-degree 0, or none of out-degree 0
+- =too-wide= - the drawing is more than twice as wide as it is tall
+- =too-tall= - narrower than half as wide as tall, and not a branched workflow
+- =edges-balance= - fewer than $1.5\times$ as many right-going as left-going arcs
+- =dense-hub= - some node's incident degree exceeds $2\lceil\sqrt{n}\rceil$
+
+* Examples
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+A small DAG ranked via the TALA pipeline
+
+#+begin_src janet :session examples :results output
+(def dag (make-digraph))
+(add-nodes dag "s" "b1" "b2" "c1" "c2" "t")
+(add-edges dag [["s" "b1"] ["s" "b2"] ["b1" "c1"]
+                ["b2" "c2"] ["c1" "t"] ["c2" "t"]])
+
+(def res (layout-dag dag))
+(printf "tala eligible? %p  levels: %p positioned: %p"
+        (res :eligible) (res :level-count) (length (res :pos)))
+#+end_src
+
+#+RESULTS:
+: tala eligible? true  levels: 4 positioned: 6
+
+#+begin_src janet :session examples :results output
+(def tb (graph-layout dag "dag" :direction "TB"))
+(def lr (graph-layout dag "dag" :direction "LR"))
+(printf "TB eligible? %p\nLR eligible? %p" (tb :eligible) (lr :eligible))
+
+(def ring (make-digraph))
+(add-nodes ring "n1" "n2" "n3" "n4")
+(add-edges ring [["n1" "n2"] ["n2" "n3"] ["n3" "n4"] ["n4" "n1"]])
+
+(printf "ring force eligible? %p" ((graph-layout ring "force") :eligible))
+(printf "ring circle eligible? %p" ((graph-layout ring "circle") :eligible))
+(printf "unknown layout => %p" (try (graph-layout ring "wonky") ([e] e)))
+#+end_src
+
+#+RESULTS:
+: TB eligible? true
+: LR eligible? true
+: ring force eligible? true
+: ring circle eligible? true
+: unknown layout => "graph-layout: unknown layout 'wonky'"
+
+The phylogram family draws weighted trees as rectilinear dendrograms
+
+#+begin_src janet :session examples :results output
+(def t (make-weighted-graph))
+(add-nodes t "root" "a" "b" "c")
+(add-edges t ["root" "a" 2] ["root" "b" 1] ["b" "c" 3])
+
+(each name ["phylogram" "phylogenetic-tree" "unrooted-phylogram"]
+  (def r (graph-layout t name :root "root"))
+  (printf "%s => eligible? %p, positioned: %p" name (r :eligible) (length (r :pos))))
+#+end_src
+
+#+RESULTS:
+: phylogram => eligible? true, positioned: 4
+: phylogenetic-tree => eligible? true, positioned: 4
+: unrooted-phylogram => eligible? true, positioned: 4
+
+* References
+- Tamassia (2013), /Handbook of Graph Drawing and Visualization/ (force directed, orthogonal, radial, spectral layout families.)
+- Mäusle & Tantau (2018), the /pgf/ [[https://tikz.dev/gd-phylogenetics][phylogenetics graph drawing library]].

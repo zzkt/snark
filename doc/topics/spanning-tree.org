@@ -1,0 +1,53 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/spanning-tree.janet
+#+title: Spanning Trees & Algebraic
+
+*Modules:* [[file:../../graphs/spanning-tree.janet][spanning-tree]]
+
+Laplacian-based counting and the algebraic face of spanning structure.
+
+* Summary
+
+- =graph-laplacian= — the Laplacian matrix of an undirected graph
+- =matrix-determinant= — exact determinant by the fraction-free Bareiss algorithm
+- =count-spanning-trees= — Matrix-Tree theorem, any cofactor of the Laplacian. Self-loops are ignored. Directed graphs are rejected.
+- =count-eulerian-circuits= — BEST theorem, the number of Eulerian circuits of a balanced digraph with a fixed last arc.
+
+* Examples
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+check the output of =count-spanning-trees= against Cayley's formula $|V|^(|V|-2) = 4² = 16$ for =K₄=
+
+#+begin_src janet :session examples :results output
+(def k4 (make-graph))
+(add-nodes k4 ["a" "b" "c" "d"])
+(add-edges k4 [["a" "b"] ["a" "c"] ["a" "d"] ["b" "c"] ["b" "d"] ["c" "d"]])
+
+(printf "spanning trees of K4 (Cayley: 4^2): %p" (count-spanning-trees k4))
+#+end_src
+
+#+RESULTS:
+: spanning trees of K4 (Cayley: 4^2): 16
+
+Eulerian circuits of the bidirected triangle (BEST)
+
+#+begin_src janet :session examples :results output
+(def k3 (make-digraph))
+(add-nodes k3 ["0" "1" "2"])
+(add-edges k3 [["0" "1" 1] ["0" "2" 1]
+               ["1" "0" 1] ["1" "2" 1]
+               ["2" "0" 1] ["2" "1" 1]])
+
+(printf "Eulerian circuits of bidirected K3: %p" (count-eulerian-circuits k3))
+#+end_src
+
+#+RESULTS:
+: Eulerian circuits of bidirected K3: 3
+
+* References
+- Diestel, /Graph Theory/ (6th ed.), Ch.1 “The Basics” (trees)
+- van Aardenne-Ehrenfest & de Bruijn 1951 (BEST theorem)
+- Kirchhoff 1847 (matrix-tree theorem)

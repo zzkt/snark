@@ -1,0 +1,74 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/tournaments.janet
+#+title: Tournaments
+
+*Modules:* [[file:../../graphs/tournament.janet][tournament]], [[file:../../graphs/digraph.janet][digraph]]
+
+Complete oriented digraphs where every pair of distinct vertices has exactly one directed arc. Classical tournament combinatorics; score sequences, kings, Hamiltonian paths, transitivity and regularity.
+
+The canonical constructions give test instances for =regular-tournament?= (every vertex has the same out-degree) vs =transitive-tournament?= (the orientation matches a total order). Landau's theorem characterises realisable score sequences.
+
+* Summary
+
+- =is-tournament?=, =tournament-matrix=, =tournament-score-sequence= — recognition and invariants
+- =valid-tournament-score-sequence?= (Landau's theorem) — is a score sequence realisable
+- =transitive-tournament?=, =regular-tournament?=, =strong-tournament?= — predicates recognising the canonical constructions in an existing digraph (not constructors)
+- =tournament-kings=, =is-tournament-king?= — vertices that reach every other vertex in distance ≤ 2
+- =tournament-hamiltonian-path= — every tournament has a Hamiltonian path
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def t (make-digraph))
+(add-nodes t ["a" "b" "c"])
+(add-edges t [["a" "b" 1] ["a" "c" 1] ["b" "c" 1]])
+
+(printf "tournament? %p" (is-tournament? t))
+
+(printf "score sequence: %s" (string/join (map string (tournament-score-sequence t)) " "))
+
+(printf "valid? %p" (valid-tournament-score-sequence? (tournament-score-sequence t)))
+
+(printf "kings: %s" (string/join (tournament-kings t) " "))
+
+(printf "transitive? %p  regular? %p" (transitive-tournament? t) (regular-tournament? t))
+#+end_src
+
+#+RESULTS:
+: tournament? true
+: score sequence: 0 1 2
+: valid? true
+: kings: a
+: transitive? true  regular? false
+
+A 3-cycle is regular and strongly connected yet still has a Hamiltonian path
+
+#+begin_src janet :session examples :results output
+(def c3 (make-digraph))
+(add-nodes c3 ["a" "b" "c"])
+(add-edges c3 [["a" "b" 1] ["b" "c" 1] ["c" "a" 1]])
+
+(printf "scores: %p" (tournament-score-sequence c3))
+
+(printf "regular? %p\nstrong? %p"
+        (regular-tournament? c3) (strong-tournament? c3))
+
+(printf "Hamiltonian path length: %p"
+        (length (tournament-hamiltonian-path c3)))
+#+end_src
+
+#+RESULTS:
+: scores: @[1 1 1]
+: regular? true
+: strong? true
+: Hamiltonian path length: 3
+
+* References
+- Diestel, Ch.10 “Hamilton Cycles”
+- Bondy & Murty, Ch.1 (tournaments), Ch.3 (strong-connectivity criterion)
+- Landau 1953, “On dominance relations and the structure of animal societies”.
+- Moon 1968, /Topics on Tournaments/.

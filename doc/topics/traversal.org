@@ -1,0 +1,72 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/traversal.janet
+#+title: Traversal & Ordering
+
+*Modules:* [[file:../../graphs/traversal.janet][traversal]], [[file:../../graphs/connectivity.janet][connectivity]]
+
+Traversal is a common substrate for many algorithms in the library.
+
+BFS and DFS over all concrete graph types, ordering (topological sort), component structure (Kosaraju SCC, =semi-connected?=), and Eulerian circuit detection.
+
+* Summary
+
+- =bfs=, =dfs= — generic traversals (and typed variants)
+- =dfs-all= - the DFS forest
+- =bfs-path= — shortest path by edge count between two nodes
+- =topological-sort= — Kahn's algorithm
+- =kosaraju-scc= — strongly connected components (array of arrays)
+- =semi-connected?= — every pair of vertices connected in at least one direction.
+- =eulerian-cycle= — an Eulerian circuit. =eulerian-tour= returns a simple cycle without repeating the starting node, or nil if the graph is not a simple cycle.
+- =dag-shortest-path=, =dag-shortest-path-tree=, =shortest-cycle-through-edge=, =hamiltonian-path-dag= — shortest paths in DAGs and related queries.
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def g (make-graph))
+(add-nodes g ["a" "b" "c" "d" "e"])
+(add-edges g [["a" "b"] ["b" "c"] ["a" "d"] ["b" "e"]])
+
+(printf "bfs from a: %p" (string/join (map string (bfs g "a")) "-"))
+(printf "connected? %p" (connected? g))
+#+end_src
+
+#+RESULTS:
+: bfs from a: "a-b-d-c-e"
+: connected? true
+
+Strong connectivity and the semi-connectivity order
+
+#+begin_src janet :session examples :results output
+(def d (make-digraph))
+(add-nodes d ["a" "b" "c" "d" "e"])
+(add-edges d [["a" "b" 1] ["b" "c" 1]
+              ["c" "a" 1] ["c" "d" 1] ["d" "e" 1]])
+
+(printf "SCCs: %p components" (length (kosaraju-scc d)))
+(printf "semi-connected? %p" (semi-connected? d))
+(printf "topological order (d): %p" (topological-sort d))
+
+(def d2 (make-digraph))
+(add-nodes d2 ["a" "b" "c" "d" "e"])
+(add-edges d2 [["a" "b" 1] ["a" "c" 1]
+               ["b" "c" 1] ["b" "d" 1]
+               ["c" "d" 1] ["c" "e" 1]])
+
+(printf "topological order (d2): %p" (topological-sort d2))
+#+end_src
+
+#+RESULTS:
+: SCCs: 3 components
+: semi-connected? true
+: topological order (d): nil
+: topological order (d2): @["a" "b" "c" "d" "e"]
+
+* References
+- Diestel, Ch.1 “The Basics”
+- Cormen et al., /Introduction to Algorithms/ (4th ed.), Ch.20 “Elementary Graph Algorithms”
+- Kosaraju/Sharir (SCC)
+- Kahn 1962 (topological sort)

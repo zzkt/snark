@@ -1,0 +1,62 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/cores.janet
+#+title: Cores & Shells
+
+*Modules:* [[file:../../graphs/cores.janet][cores]]
+
+Degeneracy structure and its onion peeling.
+
+Core numbers are determined by Batagelj–Zaveršnik bucket sort, an $O(V+E)$ degeneracy peel. The shell/crust/corona functions refine the k-core into frontier layers. Core number provides a useful proxy for “local densification” without the need to count triangles.
+
+* Summary
+
++ =core-number= — the largest $k$ for which each node lies in a k-core
++ =k-core= — the maximal induced subgraph with minimum degree ≥ $k$ (core number ≥ $k$)
++ =k-shell= — the nodes with core number exactly $k$
++ =k-crust= — the nodes with core number ≤ $k$ (the peeled prefix of the hierarchy, shells $0…k$). The usual Batagelj–Zaveršnik crust is the complement i.e. =(core number > $k$)
++ =k-corona= — the boundary of the k-core, nodes of core number $k$ having at most $k$ neighbours inside the k-core.
++ =onion-layers= — the complete peel order as ={node layer}= array
+
+=k-core=, =k-shell=, =k-crust= and =k-corona= return an induced subgraph as =:graph= which can be queried with =node-count= or =nodes=.
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+Two triangles sharing the node =c=, plus the triangle =c d e= where every node has core number 2
+
+#+begin_src janet :session examples :results output
+(def g (make-graph))
+(add-nodes g "a" "b" "c" "d" "e")
+(add-edges g ["a" "b"] ["a" "c"] ["b" "c"] ["c" "d"] ["d" "e"] ["c" "e"])
+
+(def cn (core-number g))
+(printf "core numbers: %s"
+        (string/join (map |(string (get cn $0)) (sort (nodes g) >)) " "))
+#+end_src
+
+#+RESULTS:
+: core numbers: 2 2 2 2 2
+
+Because every node has core number 2, the shell, the peeled prefix (=k-crust=) and the k-core all coincide, while the corona picks out the four nodes with at most two neighbours inside the core.
+
+#+begin_src janet :session examples :results output
+(def k2 (k-core g 2))
+
+(printf "2-core: %d of %d nodes" (node-count k2) (node-count g))
+(printf "2-shell: %d" (node-count (k-shell g 2)))
+(printf "2-crust: %d" (node-count (k-crust g 2)))
+(printf "2-corona: %s" (string/join (sort (map string (nodes (k-corona g 2)))) " "))
+#+end_src
+
+#+RESULTS:
+: 2-core: 5 of 5 nodes
+: 2-shell: 5
+: 2-crust: 5
+: 2-corona: a b d e
+
+* References
+- Seidman 1983, “Network structure and minimum degree”.
+- Batagelj & Zaveršnik 2003, “An O(m) algorithm for cores decomposition of networks”.

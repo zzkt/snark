@@ -1,0 +1,138 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/metrics.janet
+#+title: Network Metrics
+
+*Modules:* [[file:../../graphs/metrics.janet][metrics]], [[file:../../graphs/shortest-paths.janet][shortest-paths]]
+
+Global and local statistics over graphs.
+
+* Summary
+- =density=, =average-degree=, =degree-sequence= — degree statistics
+- =graph-diameter=, =graph-radius=, =graph-center=, =graph-periphery=, =eccentricity= — size statistics
+- =average-path-length=, =graph-shortest-path-lengths= — distance statistics
+- =clustering-coefficient=, =average-clustering-coefficient=, =global-clustering-coefficient=, =graph-transitivity= — local, mean, and global transitivity metrics
+- =cubic?= — true when every vertex has degree 3
+- =girth=, =shortest-cycle=, =triangle-count=, =bipartite?= — cycle and structural invariants over the undirected simple structure
+- =maximum-independent-set=, =independence-number=, =maximum-vertex-cover=, =vertex-cover-number= — exact branch-and-bound invariants
+- =spanning-tree-count= — number of spanning trees via the Matrix-Tree theorem
+- =toughness= — minimum of |S| / c(G-S) over disconnecting vertex cuts S
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+A triangle with a pendant edge (where node =d= has no triangle but still counts towards the mean)
+
+#+begin_src janet :session examples :results output
+(def g (make-graph))
+(add-nodes g ["a" "b" "c" "d"])
+(add-edges g [["a" "b"] ["b" "c"] ["c" "a"] ["c" "d"]])
+
+(printf "density: %.3f" (density g))
+(printf "diameter: %p, radius: %p" (graph-diameter g) (graph-radius g))
+(printf "avg path length: %.3f" (average-path-length g))
+(printf "global clustering: %.3f" (global-clustering-coefficient g))
+(printf "mean clustering: %.3f" (average-clustering-coefficient g))
+#+end_src
+
+#+RESULTS:
+: density: 0.667
+: diameter: 2, radius: 1
+: avg path length: 1.333
+: global clustering: 0.600
+: mean clustering: 0.583
+
+Note: =global-clustering-coefficient= weights each closed triple equally, while =average-clustering-coefficient= averages the per-node coefficients, which is why the two can differ.
+
+Graph center and periphery on a path graph
+
+#+begin_src janet :session examples :results output
+(def p5 (make-graph))
+(add-nodes p5 ["a" "b" "c" "d" "e"])
+(add-edges p5 [["a" "b"] ["b" "c"] ["c" "d"] ["d" "e"]])
+
+(printf "center: %s" (string/join (graph-center p5) ", "))
+
+(printf "periphery: %s" (string/join (graph-periphery p5) ", "))
+
+(printf "eccentricities: a=%p b=%p c=%p d=%p e=%p"
+        (eccentricity p5 "a") (eccentricity p5 "b") (eccentricity p5 "c")
+        (eccentricity p5 "d") (eccentricity p5 "e"))
+#+end_src
+
+#+RESULTS:
+: center: c
+: periphery: a, e
+: eccentricities: a=4 b=3 c=2 d=3 e=4
+
+Local clustering coefficient and undirected transitivity on a graph with triangles
+
+#+begin_src janet :session examples :results output
+(def g2 (make-graph))
+(add-nodes g2 ["a" "b" "c" "d" "e"])
+(add-edges g2 [["a" "b"] ["b" "c"] ["c" "a"]
+               ["c" "d"] ["d" "e"] ["e" "c"]])
+
+(printf "clustering-coefficient(c): %.3f"
+        (clustering-coefficient g2 "c"))
+
+(printf "average-clustering: %.3f"
+        (average-clustering-coefficient g2))
+
+(printf "global clustering (directed): %.3f"
+        (global-clustering-coefficient g2))
+
+(printf "graph-transitivity: %.3f"
+        (graph-transitivity g2))
+
+(printf "graph-average-clustering: %.3f"
+        (graph-average-clustering g2))
+#+end_src
+
+#+RESULTS:
+: clustering-coefficient(c): 0.333
+: average-clustering: 0.867
+: global clustering (directed): 0.600
+: graph-transitivity: 0.600
+: graph-average-clustering: 0.867
+
+All-pairs shortest path lengths on a small graph (including self-distances)
+
+#+begin_src janet :session examples :results output
+(def g4 (make-graph))
+(add-nodes g4 ["a" "b" "c" "d"])
+(add-edges g4 [["a" "b"] ["b" "c"] ["a" "c"]
+               ["c" "d"] ["a" "c"] ["a" "d"]])
+
+(def dists (graph-shortest-path-lengths g4))
+(printf "shortest-path-lengths\n %s"
+        (string/join (map (fn [[u v d]] (string u "->" v ": " d))
+                          (seq [[u du] :pairs dists [v d] :pairs du] @[u v d])) "\n "))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+shortest-path-lengths
+ b->b: 0
+ b->c: 1
+ b->a: 1
+ b->d: 2
+ a->b: 1
+ a->a: 0
+ a->c: 1
+ a->d: 1
+ c->c: 0
+ c->b: 1
+ c->a: 1
+ c->d: 1
+ d->c: 1
+ d->d: 0
+ d->a: 1
+ d->b: 2
+#+end_example
+
+* References
+- Diestel 2025, /Graph Theory/, Ch.1 “The Basics”
+- Newman 2018, /Networks/, Ch.7 “Measures and Metrics” and Ch.8 “Computer algorithms”

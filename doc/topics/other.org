@@ -1,0 +1,30 @@
+# -*- mode: org;  coding: utf-8; -*-
+#+PROPERTY: header-args:janet :tangle ../examples/other.janet
+#+title: Other Algorithms
+
+*Modules:* [[file:../../graphs/heap.janet][heap]]
+
+The binary min-heap is the internal workhorse used in Dijkstra, BFS, Kahn's topological sort and the Louvain/Leiden algorithms.
+
+* Summary
+- =make-binary-min-heap=, =heap-push=, =heap-pop=, =heap-peek=, =heap-size=.
+
+* Example
+
+#+begin_src janet :session examples :results none
+(import graphs :prefix "")
+#+end_src
+
+#+begin_src janet :session examples :results output
+(def h (make-binary-min-heap))
+(heap-push h 3) (heap-push h 1) (heap-push h 2)
+
+(printf "min-heap pops: %s"
+        (string/join (map string [(heap-pop h) (heap-pop h) (heap-pop h)]) " "))
+#+end_src
+
+#+RESULTS:
+: min-heap pops: 1 2 3
+
+* References
+- Cormen et al., /Introduction to Algorithms/ (4th ed.), Ch.10.
