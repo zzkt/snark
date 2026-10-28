@@ -73,7 +73,7 @@ Options
 
 Returns a graph or adjacency matrix.
 ```
-  [id :integer & args] :any-graph
+  [id :integer & args]
   (let [opts (table ;args)
         data (fetch-json (string "https://houseofgraphs.org/api/graphs/" id))]
     (graph-from-hog-data data opts)))
