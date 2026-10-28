@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/metrics.janet
+#+PROPERTY: header-args:janet :tangle ../examples/metrics.janet :comments org
 #+title: Network Metrics
 
 *Modules:* [[file:../../graphs/metrics.janet][metrics]], [[file:../../graphs/shortest-paths.janet][shortest-paths]]

@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/hamiltonian.janet
+#+PROPERTY: header-args:janet :tangle ../examples/hamiltonian.janet :comments org
 #+title: Hamiltonian Paths
 
 *Modules:* [[file:../../graphs/hamiltonian.janet][hamiltonian]]

@@ -1,3 +1,6 @@
+# Example
+
+
 (import graphs :prefix "")
 
 (def g (make-graph))
@@ -6,6 +9,15 @@
 
 (printf "bfs from a: %p" (string/join (map string (bfs g "a")) "-"))
 (printf "connected? %p" (connected? g))
+
+
+
+# #+RESULTS:
+# : bfs from a: "a-b-d-c-e"
+# : connected? true
+
+# Strong connectivity and the semi-connectivity order
+
 
 (def d (make-digraph))
 (add-nodes d ["a" "b" "c" "d" "e"])

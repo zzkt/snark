@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/shortest-paths.janet
+#+PROPERTY: header-args:janet :tangle ../examples/shortest-paths.janet :comments org
 #+title: Shortest Paths & Weighted Graphs
 
 *Modules:* [[file:../../graphs/weighted-graph.janet][weighted-graph]], [[file:../../graphs/shortest-paths.janet][shortest-paths]], [[file:../../graphs/distance-matrix.janet][distance-matrix]]

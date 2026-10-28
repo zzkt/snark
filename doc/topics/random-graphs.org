@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/random-graphs.janet
+#+PROPERTY: header-args:janet :tangle ../examples/random-graphs.janet :comments org
 #+title: Random Graphs
 
 *Modules:* [[file:../../graphs/random-graph.janet][random-graph]]

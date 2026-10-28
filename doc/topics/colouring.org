@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/colouring.janet
+#+PROPERTY: header-args:janet :tangle ../examples/colouring.janet :comments org
 #+title: Graph Coloring
 
 *Modules:* [[file:../../graphs/colouring.janet][colouring]]

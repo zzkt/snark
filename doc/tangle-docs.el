@@ -10,6 +10,8 @@
 (defvar tangle-docs--out "doc/topics.janet")
 (defvar tangle-docs--dir "doc/examples")
 
+(setq-default comment-start "#")
+
 (defun tangle-docs--sources ()
   "All org sources with a janet tangle target."
   (append (list "doc/overview.org")

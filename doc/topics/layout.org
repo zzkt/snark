@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/layout.janet
+#+PROPERTY: header-args:janet :tangle ../examples/layout.janet :comments org
 #+title: Graph Layout
 
 *Modules:* [[file:../../graphs/layout][graphs/layout]], [[file:../../graphs/layout/dag.janet][dag]], [[file:../../graphs/layout/force.janet][force]], [[file:../../graphs/layout/circle.janet][circle]], [[file:../../graphs/layout/tree.janet][tree]], [[file:../../graphs/layout/radial.janet][radial]], [[file:../../graphs/layout/orthogonal.janet][orthogonal]], [[file:../../graphs/layout/spectral.janet][spectral]], [[file:../../graphs/layout/spring.janet][spring]], [[file:../../graphs/layout/polyarc.janet][polyarc]], [[file:../../graphs/layout/lombardi.janet][lombardi]], [[file:../../graphs/layout/phylo.janet][phylo]]

@@ -1,6 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+OPTIONS: toc: nil
-#+PROPERTY: header-args:janet :tangle ../examples/flow-cut.janet
+#+PROPERTY: header-args:janet :tangle ../examples/flow-cut.janet :comments org
 #+title: Flow & Cut
 
 *Modules:* [[file:../../graphs/flow.janet][flow]], [[file:../../graphs/cuts.janet][cuts]]

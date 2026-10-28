@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/planarity.janet
+#+PROPERTY: header-args:janet :tangle ../examples/planarity.janet :comments org
 #+title: Planarity
 
 *Modules:* [[file:../../graphs/planarity.janet][planarity]]

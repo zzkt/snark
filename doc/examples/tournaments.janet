@@ -1,3 +1,6 @@
+# Example
+
+
 (import graphs :prefix "")
 
 (def t (make-digraph))
@@ -13,6 +16,18 @@
 (printf "kings: %s" (string/join (tournament-kings t) " "))
 
 (printf "transitive? %p  regular? %p" (transitive-tournament? t) (regular-tournament? t))
+
+
+
+# #+RESULTS:
+# : tournament? true
+# : score sequence: 0 1 2
+# : valid? true
+# : kings: a
+# : transitive? true  regular? false
+
+# A 3-cycle is regular and strongly connected yet still has a Hamiltonian path
+
 
 (def c3 (make-digraph))
 (add-nodes c3 ["a" "b" "c"])

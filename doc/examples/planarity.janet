@@ -1,4 +1,12 @@
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# =K₄= is the largest complete planar graph, =K₅= is the smallest complete graph that is not.
+
 
 (defn k-n [n]
   (def g (make-graph))

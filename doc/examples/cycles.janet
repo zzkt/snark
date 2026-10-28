@@ -1,4 +1,12 @@
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A triangle with a pendant edge. one cycle, thus one-element basis.
+
 
 (def g (make-graph))
 (add-nodes g "a" "b" "c" "d")
@@ -6,6 +14,15 @@
 
 (printf "has cycle? %p" (has-cycle? g))
 (printf "cycle basis size: %p" (length (graph-cycle-basis g)))
+
+
+
+# #+RESULTS:
+# : has cycle? true
+# : cycle basis size: 1
+
+# An undirected quadrilateral with a chord. two fundamental cycles.
+
 
 (def sq (make-graph))
 (add-nodes sq "a" "b" "c" "d")

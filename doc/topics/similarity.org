@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/similarity.janet
+#+PROPERTY: header-args:janet :tangle ../examples/similarity.janet :comments org
 #+title: Similarity
 
 *Modules:* [[file:../../graphs/similarity.janet][similarity]]

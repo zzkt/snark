@@ -1,4 +1,12 @@
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A two-hop network, =0 → 1 → 2=, whose bottleneck is the capacity-3 arc
+
 
 (def net (make-digraph))
 (add-nodes net "0" "1" "2")
@@ -10,6 +18,15 @@
 (def mc (min-cut net "0" r))
 (printf "min cut capacity: %p  cut set: %p" (get mc :capacity) (get mc :cut-set))
 
+
+
+# #+RESULTS:
+# : max flow 0->2: 3
+# : min cut capacity: 3  cut set: @["1" "2"]
+
+# Cut statistics on a diamond
+
+
 (def sq (make-graph))
 (add-nodes sq "a" "b" "c" "d")
 (add-edges sq ["a" "b"] ["a" "c"] ["b" "d"] ["c" "d"])
@@ -17,6 +34,16 @@
 (printf "edge-expansion {a}: %p" (edge-expansion sq @["a"]))
 (printf "cut-size {a}: %p" (cut-size sq @["a"]))
 (printf "conductance {a}: %.3f" (conductance sq @["a"]))
+
+
+
+# #+RESULTS:
+# : edge-expansion {a}: 2
+# : cut-size {a}: 2
+# : conductance {a}: 1.000
+
+# Dinic is faster on dense graphs but Edmonds-Karp is simpler
+
 
 (def net2 (make-digraph))
 (add-nodes net2 "0" "1" "2")
@@ -27,6 +54,15 @@
 (printf "edmonds-karp min cut capacity is %p with cut set %p"
         (get (min-cut net2 "0" r2) :capacity)
         (get (min-cut net2 "0" r2) :cut-set))
+
+
+
+# #+RESULTS:
+# : edmonds-karp max flow 0->2 is 3
+# : edmonds-karp min cut capacity is 3 with cut set @["1" "2"]
+
+# Full cut statistics on a cycle C5 with node set {a, b}
+
 
 (def c5 (make-graph))
 (add-nodes c5 "a" "b" "c" "d" "e")

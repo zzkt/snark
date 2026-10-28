@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/other.janet
+#+PROPERTY: header-args:janet :tangle ../examples/other.janet :comments org
 #+title: Other Algorithms
 
 *Modules:* [[file:../../graphs/heap.janet][heap]]

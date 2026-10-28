@@ -1,4 +1,12 @@
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A small DAG ranked via the TALA pipeline
+
 
 (def dag (make-digraph))
 (add-nodes dag "s" "b1" "b2" "c1" "c2" "t")
@@ -8,6 +16,12 @@
 (def res (layout-dag dag))
 (printf "tala eligible? %p  levels: %p positioned: %p"
         (res :eligible) (res :level-count) (length (res :pos)))
+
+
+
+# #+RESULTS:
+# : tala eligible? true  levels: 4 positioned: 6
+
 
 (def tb (graph-layout dag "dag" :direction "TB"))
 (def lr (graph-layout dag "dag" :direction "LR"))
@@ -20,6 +34,18 @@
 (printf "ring force eligible? %p" ((graph-layout ring "force") :eligible))
 (printf "ring circle eligible? %p" ((graph-layout ring "circle") :eligible))
 (printf "unknown layout => %p" (try (graph-layout ring "wonky") ([e] e)))
+
+
+
+# #+RESULTS:
+# : TB eligible? true
+# : LR eligible? true
+# : ring force eligible? true
+# : ring circle eligible? true
+# : unknown layout => "graph-layout: unknown layout 'wonky'"
+
+# The phylogram family draws weighted trees as rectilinear dendrograms
+
 
 (def t (make-weighted-graph))
 (add-nodes t "root" "a" "b" "c")

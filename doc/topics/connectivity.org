@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/connectivity.janet
+#+PROPERTY: header-args:janet :tangle ../examples/connectivity.janet :comments org
 #+title: Connectivity
 
 *Modules:* [[file:../../graphs/connectivity.janet][connectivity]], [[file:../../graphs/lca.janet][lca]]

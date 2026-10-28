@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/spanning-tree.janet
+#+PROPERTY: header-args:janet :tangle ../examples/spanning-tree.janet :comments org
 #+title: Spanning Trees & Algebraic
 
 *Modules:* [[file:../../graphs/spanning-tree.janet][spanning-tree]]

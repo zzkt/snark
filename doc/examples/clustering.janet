@@ -1,3 +1,8 @@
+# Examples
+
+# The classic “two triangles joined by a single edge” instance. Note that each undirected edge is written twice (once per direction) to satisfy the symmetry requirement
+
+
 (import graphs :prefix "")
 
 (def g (make-digraph))
@@ -16,6 +21,14 @@
          (map |(string/join (sort $) ",")
               (values (group-by (fn [n] (get community n))
                                 (keys community)))) " | "))
+
+
+
+# #+RESULTS:
+# : Louvain communities: a,b,c | d,e,f
+
+# Leiden refinement on the same graph which may split or reassign communities from Louvain.
+
 
 (def g2 (make-digraph))
 (add-nodes g2 ["a" "b" "c" "d" "e" "f"])

@@ -1,4 +1,12 @@
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# These predicates take a bare degree sequence, no graph is constructed.
+
 
 (printf "[3 3 3 3 3 3] graphical? %p" (is-graphical? @[3 3 3 3 3 3]))
 

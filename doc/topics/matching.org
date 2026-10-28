@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/matching.janet
+#+PROPERTY: header-args:janet :tangle ../examples/matching.janet :comments org
 #+title: Matching, Cliques & Coverings
 
 *Modules:* [[file:../../graphs/matching.janet][matching]]

@@ -1,4 +1,12 @@
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# A triangle, where every pair of nodes has Jaccard similarity 1/3
+
 
 (def g (make-graph))
 (add-nodes g ["a" "b" "c" "d"])

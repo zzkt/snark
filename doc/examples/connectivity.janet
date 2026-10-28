@@ -1,4 +1,12 @@
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A path of four nodes. one component, three bridges, two cut vertices.
+
 
 (def g (make-graph))
 (add-nodes g "a" "b" "c" "d")
@@ -8,6 +16,16 @@
 (printf "bridges: %p" (length (bridges g)))
 (printf "articulation points: %s"
         (string/join (sort (map string (articulation-points g))) " "))
+
+
+
+# #+RESULTS:
+# : components: 1
+# : bridges: 3
+# : articulation points: b c
+
+# LCA on a rooted tree where =r= is the root, =a= and =b= are its children, and =c= is a child of =a=
+
 
 (def t (make-digraph))
 (add-nodes t "r" "a" "b" "c")

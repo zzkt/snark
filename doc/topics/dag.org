@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/dag.janet
+#+PROPERTY: header-args:janet :tangle ../examples/dag.janet :comments org
 #+title: DAG Analysis & Causal Inference
 
 *Modules:* [[file:../../graphs/dag.janet][dag]]

@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/import.janet
+#+PROPERTY: header-args:janet :tangle ../examples/import.janet :comments org
 #+title: Graph Import
 
 *Modules:* [[file:../../graphs/import/adjacency.janet][adjacency]], [[file:../../graphs/import/dot.janet][dot]], [[file:../../graphs/import/gexf.janet][gexf]], [[file:../../graphs/import/hog.janet][hog]]

@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/core.janet
+#+PROPERTY: header-args:janet :tangle ../examples/core.janet :comments org
 #+title: Core Data Structures
 
 *Modules:* [[file:../../graphs/simple-graph.janet][simple-graph]], [[file:../../graphs/digraph.janet][digraph]], [[file:../../graphs/multigraph.janet][multigraph]], [[file:../../graphs/weighted-graph.janet][weighted-graph]], [[file:../../graphs/tree.janet][tree]], [[file:../../graphs/types.janet][types]], [[file:../../graphs/init.janet][init]]

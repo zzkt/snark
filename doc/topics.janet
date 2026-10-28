@@ -138,6 +138,11 @@
 #  file: doc/examples/clustering.janet
 #===============================================================================
 
+# Examples
+
+# The classic “two triangles joined by a single edge” instance. Note that each undirected edge is written twice (once per direction) to satisfy the symmetry requirement
+
+
 (import graphs :prefix "")
 
 (def g (make-digraph))
@@ -156,6 +161,14 @@
          (map |(string/join (sort $) ",")
               (values (group-by (fn [n] (get community n))
                                 (keys community)))) " | "))
+
+
+
+# #+RESULTS:
+# : Louvain communities: a,b,c | d,e,f
+
+# Leiden refinement on the same graph which may split or reassign communities from Louvain.
+
 
 (def g2 (make-digraph))
 (add-nodes g2 ["a" "b" "c" "d" "e" "f"])
@@ -179,6 +192,9 @@
 #  file: doc/examples/colouring.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
 
 (def c4 (make-graph))
@@ -197,7 +213,15 @@
 #  file: doc/examples/connectivity.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A path of four nodes. one component, three bridges, two cut vertices.
+
 
 (def g (make-graph))
 (add-nodes g "a" "b" "c" "d")
@@ -207,6 +231,16 @@
 (printf "bridges: %p" (length (bridges g)))
 (printf "articulation points: %s"
         (string/join (sort (map string (articulation-points g))) " "))
+
+
+
+# #+RESULTS:
+# : components: 1
+# : bridges: 3
+# : articulation points: b c
+
+# LCA on a rooted tree where =r= is the root, =a= and =b= are its children, and =c= is a child of =a=
+
 
 (def t (make-digraph))
 (add-nodes t "r" "a" "b" "c")
@@ -221,7 +255,15 @@
 #  file: doc/examples/core.janet
 #===============================================================================
 
+# Constructing graphs
+
+
 (import graphs :prefix "")
+
+
+
+# Every graph type has a constructor which takes zero or more parameters. Nodes (vertices) and edges can be added individually with =add-node= and/or =add-edge=. To add multiple nodes/edges to a graph, it can be more convenient to use =add-nodes= and/or =add-edges=.
+
 
 # create a new empty graph
 (def g (make-graph))
@@ -234,6 +276,17 @@
 (printf "degree(a) = %p" (degree g "a"))
 (printf "neighbours(a) = %s" (string/join (map string (neighbours g "a")) ", "))
 
+
+
+# #+RESULTS:
+# : nodes: 4
+# : edges: 4
+# : degree(a) = 2
+# : neighbours(a) = b, c
+
+# The constructors can accept initialisation data, which is often the tersest option for small graphs.
+
+
 (def d (make-digraph @["s" "t"] @{"s" @{"t" 3}}))
 
 (printf "digraph with %p nodes, edge s->t weight is %p"
@@ -244,7 +297,15 @@
 #  file: doc/examples/cores.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# Two triangles sharing the node =c=, plus the triangle =c d e= where every node has core number 2
+
 
 (def g (make-graph))
 (add-nodes g "a" "b" "c" "d" "e")
@@ -253,6 +314,14 @@
 (def cn (core-number g))
 (printf "core numbers: %s"
         (string/join (map |(string (get cn $0)) (sort (nodes g) >)) " "))
+
+
+
+# #+RESULTS:
+# : core numbers: 2 2 2 2 2
+
+# Because every node has core number 2, the shell, the peeled prefix (=k-crust=) and the k-core all coincide, while the corona picks out the four nodes with at most two neighbours inside the core.
+
 
 (def k2 (k-core g 2))
 
@@ -266,7 +335,15 @@
 #  file: doc/examples/cycles.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A triangle with a pendant edge. one cycle, thus one-element basis.
+
 
 (def g (make-graph))
 (add-nodes g "a" "b" "c" "d")
@@ -274,6 +351,15 @@
 
 (printf "has cycle? %p" (has-cycle? g))
 (printf "cycle basis size: %p" (length (graph-cycle-basis g)))
+
+
+
+# #+RESULTS:
+# : has cycle? true
+# : cycle basis size: 1
+
+# An undirected quadrilateral with a chord. two fundamental cycles.
+
 
 (def sq (make-graph))
 (add-nodes sq "a" "b" "c" "d")
@@ -288,7 +374,15 @@
 #  file: doc/examples/dag.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A diamond with a shortcut. =a → b → c = and =a → d → c=
+
 
 (def g (make-digraph))
 (add-nodes g ["a" "b" "c" "d"])
@@ -303,6 +397,17 @@
 
 (printf "generations: %p" (length (topological-generations g)))
 
+
+
+# #+RESULTS:
+# : acyclic? true
+# : ancestors(c) = a,b,d
+# : longest path: a -> b -> c
+# : generations: 3
+
+# Transitive closure for reachability
+
+
 (def h (make-digraph))
 (add-nodes h ["a" "b" "c"])
 (add-edges h [["a" "b" 1] ["b" "c" 1]])
@@ -312,6 +417,14 @@
         (length (keys (get tc "a")))
         (string/join (sort (map string (keys (get tc "a")))) ", "))
 
+
+
+# #+RESULTS:
+# : node 'a' reaches 3 nodes (incl. itself): a, b, c
+
+# Transitive reduction removes redundant edges while preserving reachability
+
+
 (def h2 (make-digraph))
 (add-nodes h2 ["a" "b" "c" "d"])
 (add-edges h2 [["a" "b" 1] ["b" "c" 1] ["a" "c" 1] ["c" "d" 1]])
@@ -320,6 +433,14 @@
 (printf "transitive reduction: %s"
         (string/join (map (fn [e] (string (e 0) "->" (e 1))) tr) ", "))
 
+
+
+# #+RESULTS:
+# : transitive reduction: a->b, b->c, c->d
+
+# Descendants of a node (all reachable nodes in the forward direction, excluding the source)
+
+
 (def g2 (make-digraph))
 (add-nodes g2 ["a" "b" "c" "d" "e"])
 (add-edges g2 [["a" "b" 1] ["a" "c" 1] ["b" "d" 1] ["c" "d" 1] ["d" "e" 1]])
@@ -327,12 +448,29 @@
 (printf "descendants(a) = %s"
         (string/join (sort (map string (descendants g2 "a"))) ", "))
 
+
+
+# #+RESULTS:
+# : descendants(a) = b, c, d, e
+
+# DAG longest path length (number of edges on the critical path). Multiple longest paths may exist but only one is returned.
+
+
 (def g3 (make-digraph))
 (add-nodes g3 ["s" "a" "b" "c" "t"])
 (add-edges g3 [["s" "a" 1] ["s" "b" 1] ["a" "c" 1] ["b" "c" 1] ["c" "t" 1]])
 
 (printf "longest path length: %p" (dag-longest-path-length g3))
 (printf "longest path: %s" (string/join (dag-longest-path g3) "->"))
+
+
+
+# #+RESULTS:
+# : longest path length: 3
+# : longest path: s->b->c->t
+
+# Antichains on a diamond DAG (maximal sets of pairwise incomparable nodes)
+
 
 (def diamond (make-digraph))
 (add-nodes diamond "s" "a" "b" "t")
@@ -344,12 +482,29 @@
         (string/join
          (map (fn [a] (string "{" (string/join (map string a) ",") "}")) ac) " "))
 
+
+
+# #+RESULTS:
+# : antichains (6): {} {s} {a} {b} {t} {a,b}
+
+# Source and sink nodes in a DAG
+
+
 (def g4 (make-digraph))
 (add-nodes g4 "s" "a" "b" "t")
 (add-edges g4 ["s" "a" 1] ["s" "b" 1] ["a" "t" 1] ["b" "t" 1])
 
 (printf "sources: %s" (string/join (source-nodes g4) ", "))
 (printf "sinks:   %s" (string/join (sink-nodes g4) ", "))
+
+
+
+# #+RESULTS:
+# : sources: s
+# : sinks:   t
+
+# Feedback arc set on a cyclic digraph (edges whose reversal breaks all cycles)
+
 
 (def cyclic (make-digraph))
 (add-nodes cyclic "a" "b" "c")
@@ -358,6 +513,14 @@
 (def fas (feedback-arc-set cyclic))
 (printf "feedback arc set: %s"
         (string/join (map (fn [e] (string (e 0) "->" (e 1))) fas) " "))
+
+
+
+# #+RESULTS:
+# : feedback arc set: c->a
+
+# Aperiodicity test on a directed cycle (periodic) vs. a graph with a chord (aperiodic)
+
 
 (def c3 (make-digraph))
 (add-nodes c3 "a" "b" "c")
@@ -369,6 +532,15 @@
 
 (printf "C3 is-aperiodic? %p" (is-aperiodic? c3))
 (printf "C3+chord is-aperiodic? %p" (is-aperiodic? c3chord))
+
+
+
+# #+RESULTS:
+# : C3 is-aperiodic? false
+# : C3+chord is-aperiodic? true
+
+# Colliders and v-structures in a causal DAG
+
 
 (def causal (make-digraph))
 (add-nodes causal "x" "y" "z" "w")
@@ -385,6 +557,9 @@
 #  file: doc/examples/export.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
 
 (def w (make-digraph))
@@ -392,6 +567,11 @@
 (add-edges w ["a" "b" 1])
 
 (print (to-dot w))
+
+
+
+# A TikZ picture from a =:weighted-graph= which can be used for the phylogram family
+
 
 (def t (make-weighted-graph))
 (add-nodes t "root" "a" "b")
@@ -404,7 +584,15 @@
 #  file: doc/examples/flow-cut.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A two-hop network, =0 → 1 → 2=, whose bottleneck is the capacity-3 arc
+
 
 (def net (make-digraph))
 (add-nodes net "0" "1" "2")
@@ -416,6 +604,15 @@
 (def mc (min-cut net "0" r))
 (printf "min cut capacity: %p  cut set: %p" (get mc :capacity) (get mc :cut-set))
 
+
+
+# #+RESULTS:
+# : max flow 0->2: 3
+# : min cut capacity: 3  cut set: @["1" "2"]
+
+# Cut statistics on a diamond
+
+
 (def sq (make-graph))
 (add-nodes sq "a" "b" "c" "d")
 (add-edges sq ["a" "b"] ["a" "c"] ["b" "d"] ["c" "d"])
@@ -423,6 +620,16 @@
 (printf "edge-expansion {a}: %p" (edge-expansion sq @["a"]))
 (printf "cut-size {a}: %p" (cut-size sq @["a"]))
 (printf "conductance {a}: %.3f" (conductance sq @["a"]))
+
+
+
+# #+RESULTS:
+# : edge-expansion {a}: 2
+# : cut-size {a}: 2
+# : conductance {a}: 1.000
+
+# Dinic is faster on dense graphs but Edmonds-Karp is simpler
+
 
 (def net2 (make-digraph))
 (add-nodes net2 "0" "1" "2")
@@ -433,6 +640,15 @@
 (printf "edmonds-karp min cut capacity is %p with cut set %p"
         (get (min-cut net2 "0" r2) :capacity)
         (get (min-cut net2 "0" r2) :cut-set))
+
+
+
+# #+RESULTS:
+# : edmonds-karp max flow 0->2 is 3
+# : edmonds-karp min cut capacity is 3 with cut set @["1" "2"]
+
+# Full cut statistics on a cycle C5 with node set {a, b}
+
 
 (def c5 (make-graph))
 (add-nodes c5 "a" "b" "c" "d" "e")
@@ -466,6 +682,9 @@
 #  file: doc/examples/hamiltonian.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
 
 (def g (make-graph))
@@ -481,6 +700,9 @@
 #  file: doc/examples/import.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
 
 (def g (graph-from-adjacency-list @[@[1 2] @[0 2] @[0 1]]
@@ -494,7 +716,15 @@
 #  file: doc/examples/layout.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# A small DAG ranked via the TALA pipeline
+
 
 (def dag (make-digraph))
 (add-nodes dag "s" "b1" "b2" "c1" "c2" "t")
@@ -504,6 +734,12 @@
 (def res (layout-dag dag))
 (printf "tala eligible? %p  levels: %p positioned: %p"
         (res :eligible) (res :level-count) (length (res :pos)))
+
+
+
+# #+RESULTS:
+# : tala eligible? true  levels: 4 positioned: 6
+
 
 (def tb (graph-layout dag "dag" :direction "TB"))
 (def lr (graph-layout dag "dag" :direction "LR"))
@@ -516,6 +752,18 @@
 (printf "ring force eligible? %p" ((graph-layout ring "force") :eligible))
 (printf "ring circle eligible? %p" ((graph-layout ring "circle") :eligible))
 (printf "unknown layout => %p" (try (graph-layout ring "wonky") ([e] e)))
+
+
+
+# #+RESULTS:
+# : TB eligible? true
+# : LR eligible? true
+# : ring force eligible? true
+# : ring circle eligible? true
+# : unknown layout => "graph-layout: unknown layout 'wonky'"
+
+# The phylogram family draws weighted trees as rectilinear dendrograms
+
 
 (def t (make-weighted-graph))
 (add-nodes t "root" "a" "b" "c")
@@ -530,7 +778,15 @@
 #  file: doc/examples/matching.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# The path on four nodes, =a b c d=, which is bipartite
+
 
 (def p4 (make-graph))
 (add-nodes p4 ["a" "b" "c" "d"])
@@ -550,12 +806,31 @@
 (printf "min vertex cover (König): %p"
         (length (minimum-vertex-cover p4 (get sides :x) (get sides :y))))
 
+
+
+# #+RESULTS:
+# : max matching size (P4): 2
+# : blossom vs bipartite agree: true
+# : min vertex cover (König): 2
+
+# Cliques of a triangle. The empty clique, three singletons, three edges, and the triangle itself.
+
+
 (def tri (make-graph))
 (add-nodes tri ["a" "b" "c"])
 (add-edges tri [["a" "b"] ["b" "c"] ["a" "c"]])
 
 (printf "cliques: %p" (number-of-cliques tri))
 (printf "clique number of node 'a' is %p" (node-clique-number tri "a"))
+
+
+
+# #+RESULTS:
+# : cliques: 8
+# : clique number of node 'a' is 3
+
+# Matching validation and greedy maximal matching on a path
+
 
 (def p4 (make-graph))
 (add-nodes p4 ["a" "b" "c" "d"])
@@ -569,6 +844,18 @@
 (printf "is maximal matching? %p" (is-maximal-matching? p4 greedy))
 (printf "is perfect matching? %p" (is-perfect-matching? p4 greedy))
 (printf "is perfect matching graph? %p" (is-perfect-matching-graph? p4))
+
+
+
+# #+RESULTS:
+# : greedy maximal matching: a-b c-d
+# : is matching? true
+# : is maximal matching? true
+# : is perfect matching? true
+# : is perfect matching graph? true
+
+# Bipartite matching, Hall's condition, and König duality.
+
 
 (def bip (make-graph))
 (add-nodes bip ["x1" "x2" "x3" "y1" "y2" "y3"])
@@ -590,6 +877,19 @@
 (printf "min vertex cover: %p" mvc)
 (printf "max independent set: %p" mis)
 
+
+
+# #+RESULTS:
+# : bipartite sides: x=x1,x2,x3 | y=y1,y2,y3
+# : max bipartite matching size: 3
+# : perfect matching? true
+# : Hall condition satisfied? true
+# : min vertex cover: @["x1" "x2" "x3"]
+# : max independent set: @["y1" "y2" "y3"]
+
+# Maximal and all cliques on a graph with overlapping triangles
+
+
 (def g2 (make-graph))
 (add-nodes g2 ["a" "b" "c" "d"])
 (add-edges g2 [["a" "b"] ["b" "c"] ["c" "a"] ["c" "d"] ["d" "a"]])
@@ -610,7 +910,15 @@
 #  file: doc/examples/metrics.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# A triangle with a pendant edge (where node =d= has no triangle but still counts towards the mean)
+
 
 (def g (make-graph))
 (add-nodes g ["a" "b" "c" "d"])
@@ -621,6 +929,20 @@
 (printf "avg path length: %.3f" (average-path-length g))
 (printf "global clustering: %.3f" (global-clustering-coefficient g))
 (printf "mean clustering: %.3f" (average-clustering-coefficient g))
+
+
+
+# #+RESULTS:
+# : density: 0.667
+# : diameter: 2, radius: 1
+# : avg path length: 1.333
+# : global clustering: 0.600
+# : mean clustering: 0.583
+
+# Note: =global-clustering-coefficient= weights each closed triple equally, while =average-clustering-coefficient= averages the per-node coefficients, which is why the two can differ.
+
+# Graph center and periphery on a path graph
+
 
 (def p5 (make-graph))
 (add-nodes p5 ["a" "b" "c" "d" "e"])
@@ -633,6 +955,16 @@
 (printf "eccentricities: a=%p b=%p c=%p d=%p e=%p"
         (eccentricity p5 "a") (eccentricity p5 "b") (eccentricity p5 "c")
         (eccentricity p5 "d") (eccentricity p5 "e"))
+
+
+
+# #+RESULTS:
+# : center: c
+# : periphery: a, e
+# : eccentricities: a=4 b=3 c=2 d=3 e=4
+
+# Local clustering coefficient and undirected transitivity on a graph with triangles
+
 
 (def g2 (make-graph))
 (add-nodes g2 ["a" "b" "c" "d" "e"])
@@ -654,6 +986,18 @@
 (printf "graph-average-clustering: %.3f"
         (graph-average-clustering g2))
 
+
+
+# #+RESULTS:
+# : clustering-coefficient(c): 0.333
+# : average-clustering: 0.867
+# : global clustering (directed): 0.600
+# : graph-transitivity: 0.600
+# : graph-average-clustering: 0.867
+
+# All-pairs shortest path lengths on a small graph (including self-distances)
+
+
 (def g4 (make-graph))
 (add-nodes g4 ["a" "b" "c" "d"])
 (add-edges g4 [["a" "b"] ["b" "c"] ["a" "c"]
@@ -669,6 +1013,9 @@
 #  file: doc/examples/other.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
 
 (def h (make-binary-min-heap))
@@ -682,8 +1029,16 @@
 #  file: doc/examples/petri-net.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs/petri-net :prefix "")
 (import graphs/export/petri-net :prefix "ex/")
+
+
+
+# A net can be constructed using =make-petri-net=, which provides a range of options, or using =petri-net-from-arcs= which is simpler in most cases.
+
 
 (def p0 (petri-net-from-arcs
          @["p1" "p2"]             # places
@@ -695,6 +1050,14 @@
 
 (printf "A Petri-net with %p places and %p transitions."
         (petri-net-place-count p0) (petri-net-transition-count p0))
+
+
+
+# #+RESULTS:
+# : A Petri-net with 2 places and 2 transitions.
+
+# A producer net. =t1= consumes a token from =p1= and produces two into =p2=
+
 
 (def pn (petri-net-from-arcs
           @["p1" "p2"] @["t1"]
@@ -709,6 +1072,17 @@
 
 (printf "bounded? %p\nsafe? %p" (petri-net-bounded? pn) (petri-net-safe? pn))
 
+
+
+# #+RESULTS:
+# : enabled: @["t1"]
+# : marking after firing: @{"p1" 0 "p2" 2}
+# : bounded? true
+# : safe? false
+
+# Firing preserves the S-invariant =2·p1 + p2=
+
+
 (def pn2 (petri-net-from-arcs
            @["p1" "p2"] @["t1"]
            @[["p1" "t1"] ["t1" "p2" 2]]))
@@ -717,6 +1091,15 @@
 
 (printf "S-invariant basis: %p" (get inv :places))
 (printf "consistent with {p2 2}? %p" (petri-net-consistent? pn2 @{"p2" 2}))
+
+
+
+# #+RESULTS:
+# : S-invariant basis: @[@[2 1]]
+# : consistent with {p2 2}? false
+
+# Reachability. A token shuttles =x → y → x= around a cycle.
+
 
 (def cy (petri-net-from-arcs
           @["x" "y"] @["s" "f"]
@@ -732,6 +1115,17 @@
 
 (printf "live? %p\ndeadlock? %p" (petri-net-live? cy) (petri-net-deadlock? cy))
 
+
+
+# #+RESULTS:
+# : firing sequence to {y 1}: @["s"]
+# : reachable markings: x=1|y=0 x=0|y=1
+# : live? true
+# : deadlock? false
+
+# Unbounded nets have infinite entries in the coverability tree
+
+
 (def unb (petri-net-from-arcs
            @["p"] @["t"]
            @[["p" "t"] ["t" "p" 2]]
@@ -745,6 +1139,15 @@
         (some (fn [n] (some (fn [c] (= c math/inf)) (values (get n :marking))))
               (get ct :nodes)))
 
+
+
+# #+RESULTS:
+# : bounded? false
+# : coverability tree contains omega? true
+
+# Reproducible simulation using a =:seed=
+
+
 (def sim (petri-net-from-arcs
            @["a" "b"] @["x"]
            @[["a" "x"] ["x" "b"] ["b" "x"]]
@@ -752,6 +1155,14 @@
 
 (petri-net-simulate sim :steps 5 :seed 7)
 (printf "tokens conserved: %p" (petri-net-token-count sim))
+
+
+
+# #+RESULTS:
+# : tokens conserved: 1
+
+# Render with Graphviz
+
 
 (def pn3 (petri-net-from-arcs
            @["p1" "p2"] @["t1"]
@@ -765,7 +1176,15 @@
 #  file: doc/examples/planarity.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# =K₄= is the largest complete planar graph, =K₅= is the smallest complete graph that is not.
+
 
 (defn k-n [n]
   (def g (make-graph))
@@ -786,6 +1205,9 @@
 #  file: doc/examples/random-graphs.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
 
 (def g (random-graph 8 0.5 42))
@@ -803,7 +1225,15 @@
 #  file: doc/examples/sequence.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# These predicates take a bare degree sequence, no graph is constructed.
+
 
 (printf "[3 3 3 3 3 3] graphical? %p" (is-graphical? @[3 3 3 3 3 3]))
 
@@ -817,7 +1247,16 @@
 #  file: doc/examples/shortest-paths.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# Dijkstra choses a path with lower total weight over a path with fewer edges.
+# e.g. =A → B → C= path weight is 3, while the direct =A → C= path weight is 5.
+
 
 (def wg (make-weighted-graph))
 (add-nodes wg ["A" "B" "C"])
@@ -833,6 +1272,16 @@
          (map |(string/format "%.0f" $0)
               (values (weighted-graph-all-shortest-paths wg "A"))) " "))
 
+
+
+# #+RESULTS:
+# : shortest path from A to C: A->B->C (distance 3)
+# : distance table from A: 1 0 3
+
+
+# MST and distance-matrix
+
+
 (def mg (make-weighted-graph))
 (add-nodes mg ["A" "B" "C" "D"])
 (add-edges mg [["A" "B" 1] ["B" "C" 2] ["C" "D" 3]
@@ -843,6 +1292,15 @@
 
 (def dm (make-distance-matrix @["a" "b" "c"] @[[0 4 8] [4 0 2] [8 2 0]]))
 (printf "nearest pair distance: %p" (get (distance-matrix-nearest-pair dm) 2))
+
+
+
+# #+RESULTS:
+# : MST edge count (n-1): 3
+# : nearest pair distance: 2
+
+# All-pairs shortest paths via Floyd–Warshall on a weighted graph
+
 
 (def wg2 (make-weighted-graph))
 (add-nodes wg2 ["A" "B" "C" "D"])
@@ -859,7 +1317,15 @@
 #  file: doc/examples/similarity.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# A triangle, where every pair of nodes has Jaccard similarity 1/3
+
 
 (def g (make-graph))
 (add-nodes g ["a" "b" "c" "d"])
@@ -876,13 +1342,29 @@
 #  file: doc/examples/spanning-tree.janet
 #===============================================================================
 
+# Examples
+
+
 (import graphs :prefix "")
+
+
+
+# check the output of =count-spanning-trees= against Cayley's formula $|V|^(|V|-2) = 4² = 16$ for =K₄=
+
 
 (def k4 (make-graph))
 (add-nodes k4 ["a" "b" "c" "d"])
 (add-edges k4 [["a" "b"] ["a" "c"] ["a" "d"] ["b" "c"] ["b" "d"] ["c" "d"]])
 
 (printf "spanning trees of K4 (Cayley: 4^2): %p" (count-spanning-trees k4))
+
+
+
+# #+RESULTS:
+# : spanning trees of K4 (Cayley: 4^2): 16
+
+# Eulerian circuits of the bidirected triangle (BEST)
+
 
 (def k3 (make-digraph))
 (add-nodes k3 ["0" "1" "2"])
@@ -896,6 +1378,9 @@
 #===============================================================================
 #  file: doc/examples/strings.janet
 #===============================================================================
+
+# Example
+
 
 (import graphs/suffix-tree :as st)
 (import graphs/cst :as cst)
@@ -918,6 +1403,9 @@
 #  file: doc/examples/tournaments.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
 
 (def t (make-digraph))
@@ -933,6 +1421,18 @@
 (printf "kings: %s" (string/join (tournament-kings t) " "))
 
 (printf "transitive? %p  regular? %p" (transitive-tournament? t) (regular-tournament? t))
+
+
+
+# #+RESULTS:
+# : tournament? true
+# : score sequence: 0 1 2
+# : valid? true
+# : kings: a
+# : transitive? true  regular? false
+
+# A 3-cycle is regular and strongly connected yet still has a Hamiltonian path
+
 
 (def c3 (make-digraph))
 (add-nodes c3 ["a" "b" "c"])
@@ -951,6 +1451,9 @@
 #  file: doc/examples/traversal.janet
 #===============================================================================
 
+# Example
+
+
 (import graphs :prefix "")
 
 (def g (make-graph))
@@ -959,6 +1462,15 @@
 
 (printf "bfs from a: %p" (string/join (map string (bfs g "a")) "-"))
 (printf "connected? %p" (connected? g))
+
+
+
+# #+RESULTS:
+# : bfs from a: "a-b-d-c-e"
+# : connected? true
+
+# Strong connectivity and the semi-connectivity order
+
 
 (def d (make-digraph))
 (add-nodes d ["a" "b" "c" "d" "e"])

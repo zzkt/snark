@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/cores.janet
+#+PROPERTY: header-args:janet :tangle ../examples/cores.janet :comments org
 #+title: Cores & Shells
 
 *Modules:* [[file:../../graphs/cores.janet][cores]]

@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/clustering.janet
+#+PROPERTY: header-args:janet :tangle ../examples/clustering.janet :comments org
 #+title: Community Detection
 
 *Modules:* [[file:../../graphs/clustering.janet][clustering]]

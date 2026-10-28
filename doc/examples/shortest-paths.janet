@@ -1,4 +1,13 @@
+# Example
+
+
 (import graphs :prefix "")
+
+
+
+# Dijkstra choses a path with lower total weight over a path with fewer edges.
+# e.g. =A → B → C= path weight is 3, while the direct =A → C= path weight is 5.
+
 
 (def wg (make-weighted-graph))
 (add-nodes wg ["A" "B" "C"])
@@ -14,6 +23,16 @@
          (map |(string/format "%.0f" $0)
               (values (weighted-graph-all-shortest-paths wg "A"))) " "))
 
+
+
+# #+RESULTS:
+# : shortest path from A to C: A->B->C (distance 3)
+# : distance table from A: 1 0 3
+
+
+# MST and distance-matrix
+
+
 (def mg (make-weighted-graph))
 (add-nodes mg ["A" "B" "C" "D"])
 (add-edges mg [["A" "B" 1] ["B" "C" 2] ["C" "D" 3]
@@ -24,6 +43,15 @@
 
 (def dm (make-distance-matrix @["a" "b" "c"] @[[0 4 8] [4 0 2] [8 2 0]]))
 (printf "nearest pair distance: %p" (get (distance-matrix-nearest-pair dm) 2))
+
+
+
+# #+RESULTS:
+# : MST edge count (n-1): 3
+# : nearest pair distance: 2
+
+# All-pairs shortest paths via Floyd–Warshall on a weighted graph
+
 
 (def wg2 (make-weighted-graph))
 (add-nodes wg2 ["A" "B" "C" "D"])

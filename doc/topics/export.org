@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/export.janet
+#+PROPERTY: header-args:janet :tangle ../examples/export.janet :comments org
 #+title: Graph Export
 
 *Modules:* [[file:../../graphs/export][graphs/export]]

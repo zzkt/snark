@@ -1,3 +1,6 @@
+# Example
+
+
 (import graphs :prefix "")
 
 (def g (random-graph 8 0.5 42))

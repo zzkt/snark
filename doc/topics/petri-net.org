@@ -1,5 +1,5 @@
 # -*- mode: org;  coding: utf-8; -*-
-#+PROPERTY: header-args:janet :tangle ../examples/petri-net.janet
+#+PROPERTY: header-args:janet :tangle ../examples/petri-net.janet :comments org
 #+title: Petri Nets
 
 *Modules:* [[file:../../graphs/petri-net.janet][petri-net]] (model), [[file:../../graphs/export/petri-net.janet][petri-net]] (exporters)
@@ -26,7 +26,7 @@ The Petri-net model is not exported from the =graphs= module by default and must
 
 *Structure* — =petri-net-pure?=, =petri-net-ordinary?=, =petri-net-source-place?=, =petri-net-sink-place?=
 
-*Visualisation & export* — =petri-net-to-dot=, =petri-net-to-tikz=, and =petri-net-state-space-to-dot= can be found in [[file:../../graphs/export/petri-net.janet][export/petri-net]]
+*Visualisation & export* — =petri-net-to-dot=, =petri-net-to-tikz=, and =petri-net-state-space-to-dot= can be found in [[file:~/code/codeberg/snark/graphs/export/petri-net.janet][export/petri-net]]
 
 * Example
 

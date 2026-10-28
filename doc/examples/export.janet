@@ -1,3 +1,6 @@
+# Examples
+
+
 (import graphs :prefix "")
 
 (def w (make-digraph))
@@ -5,6 +8,11 @@
 (add-edges w ["a" "b" 1])
 
 (print (to-dot w))
+
+
+
+# A TikZ picture from a =:weighted-graph= which can be used for the phylogram family
+
 
 (def t (make-weighted-graph))
 (add-nodes t "root" "a" "b")
