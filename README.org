@@ -285,6 +285,3 @@ Internal layout algorithms can be accessed through =graph-layout= (or the =layou
 
 *Graph Drawing and Visualization*
 - Tamassia (2013) *Handbook of Graph Drawing and Visualization*. CRC Press
-
-
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
