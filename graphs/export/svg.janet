@@ -382,6 +382,7 @@ in-process, with positions pinned and rendered via dot's '-n2 no-layout' mode.
 
    :edge-color  — stroke colour for every edge.
 
+   accepts `to-dot` &keys; :graph-opts, :node-opts, :edge-opts, etc.
 
  Lombardi poly-arc renderer only
 
@@ -429,7 +430,8 @@ in-process, with positions pinned and rendered via dot's '-n2 no-layout' mode.
  and, for library layouts, the layout's own &keys (:iterations :width
  :height ...).
 
-Returns the SVG content as a string.```
+Returns the SVG content as a string.
+```
   [g :weighted & graph-keys] :string
   (let [opts (table ;graph-keys)
         out-path (get opts :path "graph.svg")
@@ -501,9 +503,7 @@ Returns the SVG content as a string.```
                          matched " of " (length nodes-of-g) " nodes"
                          (if (pos? stray)
                            (string " (and " stray " of its " (length pins)
-                                   " entries name no node at all -- a key has to "
-                                   "EQUAL the graph's node, so the string \"1\" "
-                                   "does not match the integer 1)")
+                                   " entries name no node at all)")
                            "")
                          ". Unpinned: "
                          (string/join (map string (slice missing 0 (min 5 (length missing))))

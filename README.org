@@ -116,7 +116,7 @@ see: [[file:graphs/cycles.janet][graphs/cycles]]
 see: [[file:graphs/flow.janet][graphs/flow]] and [[file:graphs/cuts.janet][graphs/cuts]]
 
 - *Edmonds-Karp* — BFS-based max flow
-- *Dinic* — level graph and blocking flow. O(V²E) in general, often faster in practice.
+- *Dinic* — level graph and blocking flow
 - *Min-Cut* — minimum s-t cut, read back from a previous flow result
 - *Cuts & Expansion* — on undirected graphs: volume, cut-size, edge/node boundaries, edge/node/boundary expansion, mixing expansion, normalized cut, conductance
 
@@ -175,8 +175,8 @@ see: [[file:graphs/similarity.janet][graphs/similarity]]
 * Cores & Shells
 see: [[file:graphs/cores.janet][graphs/cores]]
 
-- *Core Number* — maximum $k$ such that the node belongs to a k-core
 - *k-Core / k-Shell / k-Crust / k-Corona* — nested peeling decompositions, each as a =:graph=
+- *Core Number* — maximum k such that the node belongs to a k-core
 - *Onion Layers* — layered view from shell peeling
 
 * Graph Colouring
@@ -285,3 +285,6 @@ Internal layout algorithms can be accessed through =graph-layout= (or the =layou
 
 *Graph Drawing and Visualization*
 - Tamassia (2013) *Handbook of Graph Drawing and Visualization*. CRC Press
+
+
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>

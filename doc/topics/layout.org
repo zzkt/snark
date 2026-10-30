@@ -2,7 +2,7 @@
 #+PROPERTY: header-args:janet :tangle ../examples/layout.janet :comments org
 #+title: Graph Layout
 
-*Modules:* [[file:../../graphs/layout][graphs/layout]], [[file:../../graphs/layout/dag.janet][dag]], [[file:../../graphs/layout/force.janet][force]], [[file:../../graphs/layout/circle.janet][circle]], [[file:../../graphs/layout/tree.janet][tree]], [[file:../../graphs/layout/radial.janet][radial]], [[file:../../graphs/layout/orthogonal.janet][orthogonal]], [[file:../../graphs/layout/spectral.janet][spectral]], [[file:../../graphs/layout/spring.janet][spring]], [[file:../../graphs/layout/polyarc.janet][polyarc]], [[file:../../graphs/layout/lombardi.janet][lombardi]], [[file:../../graphs/layout/phylo.janet][phylo]]
+*Modules:* [[file:../../graphs/layout][graphs/layout]], [[file:../../graphs/layout/dag.janet][dag]], [[file:../../graphs/layout/force.janet][force]], [[file:../../graphs/layout/circle.janet][circle]], [[file:../../graphs/layout/tree.janet][tree]], [[file:../../graphs/layout/radial.janet][radial]], [[file:../../graphs/layout/orthogonal.janet][orthogonal]], [[file:../../graphs/layout/spectral.janet][spectral]], [[file:../../graphs/layout/spring.janet][spring]], [[file:../../graphs/layout/polyarc.janet][polyarc]], [[file:../../graphs/layout/phylo.janet][phylo]]
 
 Generate deterministic (mostly) graph drawing coordinates from a graph. There is one file per algorithm family. The =graphs= module exposes every =layout-*= function along with the =graph-layout= entry point.
 
