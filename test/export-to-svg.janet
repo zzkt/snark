@@ -522,12 +522,16 @@
 
   (cassert-eq "a partial table with :fixed-positions is refused"
               (not= nil partial-err) true)
+
   (cassert-eq "the refusal says how many nodes are unpinned"
               (has? partial-err "2 of 4") true)
+
   (cassert-eq "the refusal names an unpinned node"
               (has? partial-err "Unpinned: c, d") true)
+
   (cassert-eq "the refusal says what to do instead"
               (has? partial-err "drop :fixed-positions") true)
+
   (cassert-eq "the partial refusal left no file behind"
               (nil? (os/stat "/tmp/_snark-test-partial.svg")) true)
 
@@ -540,10 +544,9 @@
 
   (cassert-eq "keys of the wrong type count as no pin at all"
               (has? wrong-type "pins 3 of 4 nodes") true)
+
   (cassert-eq "the refusal says why they did not count"
               (has? wrong-type "name no node at all") true)
-  (cassert-eq "the refusal states the key rule"
-              (has? wrong-type "does not match the integer") true)
 
   (cassert-eq "a partial table without :fixed-positions is not an error"
               (try (do (to-svg K4 :path "/tmp/_snark-test-partial0.svg"

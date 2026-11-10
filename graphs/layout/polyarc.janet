@@ -34,31 +34,30 @@
 (import ./spring :prefix "_sp_")
 (import ./common :prefix "_cm_")
 
+
 # ==============================================================================
 #  Angles
 # ==============================================================================
-
 (def two-pi (* 2 math/pi))
 
 (defn _wrap
   "Wrap an angle into [0, 2*pi)."
   [a] (mod a two-pi))
 
-(defn _line-angle
-  "Fold a directed angle into a tangent-line angle in [0, pi)."
-  [a]  (mod a math/pi))
-
 (defn _delta
-  "Signed difference b - a folded into (-pi, pi]."
+  "Signed difference b - a wrapped into (-pi, pi]."
   [a b]
   (var d (- b a))
   (when (> d math/pi) (set d (- d two-pi)))
   (when (< d (- math/pi)) (set d (+ d two-pi)))
   d)
 
+(defn _line-angle
+  "Wrap a directed angle into a tangent-line angle in [0, pi)."
+  [a] (mod a math/pi))
 
 (defn _line-diff
-  "Signed difference between tangent-line angles folded into (-pi/2, pi/2]."
+  "Signed difference between two tangent-line angles, wrapped into (-pi/2, pi/2]."
   [a b]
   (def d (_delta a b))
   (cond
@@ -87,7 +86,8 @@
   ```Circular order of incident edges at every vertex from initial drawing.
 
 Returns {vertex {edge-index slot}} where the tangent direction of slot i at v
-is i * 2*pi/deg(v), slot 0 is the edge first in (ascending) angular order at v.```
+is i * 2*pi/deg(v), slot 0 is the edge first in (ascending) angular order at v.
+```
   [pos edges]
   (def order @{})
   (loop [ei :range [0 (length edges)]]
@@ -238,12 +238,110 @@ rotation system does not cover every incident edge at every vertex.
     pos))
 
 (defn _radius-slot-rot
-  ```Per-vertex slot-frame rotation anchored on vertex's radius toward circle centre.```
+  "Per-vertex slot-frame rotation anchored on vertex's radius toward circle centre."
   [pos width height]
   (let [rot @{} cx (/ width 2) cy (/ height 2)]
     (eachp [v p] pos
            (put rot v (math/atan2 (- cy (p 1)) (- cx (p 0)))))
     rot))
+
+# ==============================================================================
+#  Tangent-circle placement (Koebe-Andreev-Thurston style)
+#
+#  The planar constructions (Th.3 for max-degree-3, Th. 4/5 for planar graphs)
+#  place vertices by a circle packing, one circle per vertex, adjacent vertices
+#  as tangent circles. Tangency points are used as bend points for poly-arcs.
+# ==============================================================================
+
+(defn _neighbour-map
+  "Adjacency table {vertex [neighbour ...]} from the undirected edge list."
+  [edges]
+  (def m @{})
+  (each e edges
+    (def u (e 0)) (def v (e 1))
+    (unless (get m u) (put m u @[]))
+    (unless (get m v) (put m v @[]))
+    (array/push (m u) v)
+    (array/push (m v) u))
+  m)
+
+(defn _pack-radii
+  ```Radii of a tangent-circle packing on the given positions.
+
+Adjacent circles have r_u + r_v = d(u, v), positions can be found by
+Jacobi relaxation of r_v = mean over neighbours w of (d(v, w) - r_w)
+
+Returns {vertex radius}.
+```
+  [pos edges &opt iters]
+  (def it (or iters 400))
+  (def nb (_neighbour-map edges))
+  (def r @{})
+  (eachp [v p] pos (put r v 0.5))
+  (loop [_ :range [0 it]]
+    (var max-change 0.0)
+    (def nr @{})
+    (eachp [v p] pos
+           (var acc 0.0) (var cnt 0)
+           (each w (get nb v @[])
+             (def pw (get pos w))
+             (when pw
+               (def d (math/hypot (- (pw 0) (p 0)) (- (pw 1) (p 1))))
+               (def cand (- d (get r w 0.5)))
+               (when (> cand 1e-9)
+                 (set acc (+ acc cand)) (set cnt (+ cnt 1)))))
+           (put nr v (if (> cnt 0) (/ acc cnt) 0.5)))
+    (eachp [v p] pos
+           (def rv (max 0.02 (min (get nr v) 100.0)))
+           (def ch (math/abs (- rv (get r v))))
+           (when (> ch max-change) (set max-change ch))
+           (put r v rv))
+    (when (< max-change 1e-6) (break)))
+  r)
+
+(defn _circle-pack-pos
+  ```Circle-packing vertex placement.
+Every vertex should be at the centre of a circle whose neighbours touch it.
+
+Returns {:pos {vertex [x y]} :radii {vertex radius}}.
+```
+  [g width height]
+  (def pos (get (_sp_layout-spring g :width width :height height
+                                   :iterations 300 :smooth-iterations 0) :pos))
+  (def edges (_cm__unique-edges g))
+  # normalize to unit box centred at the origin
+  (defn- bounds-of [p]
+    (var minx 1e18) (var miny 1e18) (var maxx -1e18) (var maxy -1e18)
+    (eachp [v p2] p
+           (when (< (p2 0) minx) (set minx (p2 0)))
+           (when (> (p2 0) maxx) (set maxx (p2 0)))
+           (when (< (p2 1) miny) (set miny (p2 1)))
+           (when (> (p2 1) maxy) (set maxy (p2 1))))
+    @[minx miny maxx maxy])
+  (def bnds (bounds-of pos))
+  (def [minx miny maxx maxy] bnds)
+  (def w (- maxx minx)) (def h (- maxy miny))
+  (def s (/ 1.0 (max w h)))
+  (def cx (+ minx (* w 0.5))) (def cy (+ miny (* h 0.5)))
+  (eachp [v p] pos
+         (put pos v @[(* (- (p 0) cx) s) (* (- (p 1) cy) s)]))
+  # solve radii for tangency
+  (def r (_pack-radii pos edges))
+  # scale to canvas
+  (def bnds2 (bounds-of pos))
+  (def [minx miny maxx maxy] bnds2)
+  (def w (- maxx minx)) (def h (- maxy miny))
+  (def s (/ (* 0.8 (min width height)) (max w h)))
+  (def cx (/ width 2)) (def cy (/ height 2))
+  (def pmx (+ minx (* w 0.5))) (def pmy (+ miny (* h 0.5)))
+  (def out @{})
+  (eachp [v p] pos
+         (put out v @[(+ cx (* (- (p 0) pmx) s)) (+ cy (* (- (p 1) pmy) s))]))
+  # rescale to canvas
+  (def radii @{})
+  (eachp [v radius] r (put radii v (* radius s)))
+  @{:pos out :radii radii})
+
 
 # ==============================================================================
 #  Edge geometry
@@ -260,9 +358,11 @@ Returns {:cx cy r cw} with cw true when the traversal from p to q is clockwise.`
         nd (+ (* nx dx) (* ny dy))]
     (if (or (< (+ (* dx dx) (* dy dy)) 1e-12)
             (< (math/abs nd) 1e-12))
+      # points coincide or the tangent is parallel to pq
       {:line true}
       (do
         (def lam (/ (+ (* dx dx) (* dy dy)) (* 2 nd)))
+        # traversal is clockwise iff lam < 0
         {:cx (+ (p 0) (* lam nx))
          :cy (+ (p 1) (* lam ny))
          :r (math/abs lam)
@@ -284,7 +384,7 @@ Returns {:cx cy r cw} with cw true when the traversal from p to q is clockwise.`
 
 (defn _locus-joint
   ```Meeting point of the two-arc poly edge (ref. "arcLocus")
-Returns [x y].```
+ Returns [x y].```
   [p q alpha beta meet bend]
   (let [d (math/hypot (- (q 0) (p 0)) (- (q 1) (p 1)))
         sb (- (q 1) (p 1)) cb (- (q 0) (p 0))
@@ -313,10 +413,18 @@ Returns [x y].```
   ```Splice point for the two-arc poly edge.
 Uses the arc-locus meeting point, or the edge midpoint if `join` is :midpoint.
 Returns [x y].```
-  [p q alpha beta meet bend join]
+  [p q alpha beta meet bend join &opt rp rq]
   (if (= join :midpoint)
-    @[(/ (+ (p 0) (q 0)) 2) (/ (+ (p 1) (q 1)) 2)]
-    (_locus-joint p q alpha beta meet bend)))
+    @[(/ (+ (p 0) (q 0)) 2)
+      (/ (+ (p 1) (q 1)) 2)]
+    (if (and (= join :tangent) rp rq)
+      # tangency point lies on the p-q segment at distance rp from p
+      # packing radii satisfying rp+rq = d(p,q), t = rp/(rp+rq)
+      # are where the two circles touch
+      (let [t (/ rp (+ rp rq))]
+        @[(+ (p 0) (* t (- (q 0) (p 0))))
+          (+ (p 1) (* t (- (q 1) (p 1))))])
+      (_locus-joint p q alpha beta meet bend))))
 
 (defn _seg
   "Render an _arc-circle result as a chained segment record ending at `end`."
@@ -327,8 +435,20 @@ Returns [x y].```
       :cw (if flip (not (ac :cw)) (ac :cw))
       :x (end 0) :y (end 1)}))
 
+(defn- _tangent-halves
+  ```Two half-arcs for the tangent splice.
+Returns [seg1 seg2] array, or nil if a half-arc degenerates to a straight line.
+```
+  [p q J]
+  (def c (+ (math/atan2 (- (q 1) (p 1)) (- (q 0) (p 0))) (/ math/pi 2)))
+  (def a1 (_arc-circle J p (+ c math/pi)))
+  (def a2 (_arc-circle J q c))
+  (if (or (a1 :line) (a2 :line))
+    nil
+    @[(_seg a1 J true) (_seg a2 q false)]))
+
 (defn _basis
-  "The :arcs record header shared by every edge kind."
+  "The :arcs header shared by all edges."
   [u v pu pv]
   @{:u u :v v :x0 (pu 0) :y0 (pu 1) :x1 (pv 0) :y1 (pv 1)})
 
@@ -388,19 +508,50 @@ Returns [x y].```
                   (= new-curvature old-curvature)
                   (< new-energy old-energy))))))
 
+(defn _edge-chain
+  ```A smooth chain of at most `k` arc segments for the directed edge p -> q
+whose tangent at p is `alpha` and at q is `tgt`.
+
+see: k-Lombardi recursion.
+
+Returns an array of segments.```
+  [p q alpha tgt tol meet bend join max-sweep k &opt rp rq]
+  (def ac (_arc-circle p q alpha))
+  (if (ac :line)
+    @[{:line true :x (q 0) :y (q 1)}]
+    (let [seg (_seg ac q false)
+          fits (and (<= (math/abs (_delta tgt (_out-angle ac q))) tol)
+                    (or (nil? max-sweep) (<= (_seg-sweep seg p) max-sweep)))]
+      (if (or fits (<= k 1))
+        @[seg]
+        (let [J (_poly-joint p q alpha tgt meet bend join rp rq)
+              acl (_arc-circle p J alpha)]
+          (if (or (= k 2) (acl :line))
+            # the smooth two-arc path, the 2-Lombardi splice
+            (if (and (= join :tangent) rp rq)
+              (or (_tangent-halves p q J)
+                  @[(_seg acl J false) (_seg (_arc-circle q J tgt) q true)])
+              @[(_seg acl J false) (_seg (_arc-circle q J tgt) q true)])
+            (let [tau (_out-angle acl J)
+                  kL (- k (div k 2))
+                  kR (div k 2)]
+              (array/concat
+               (_edge-chain
+                p J alpha tau tol meet bend join max-sweep kL)
+               (_edge-chain
+                J q (+ tau math/pi) tgt tol meet bend join max-sweep kR)))))))))
+
 (defn _edge-record
   ```An :arcs record for the edge u-v.
 
-tangent :slot-alpha at u toward v and :slot-tgt at v toward u. A single circle
+Tangent slot `alpha` at `u` toward `v` and `tgt` at `v` toward `u`. A single circle
 when the arc realises both tangent directions (within :tol), otherwise a two-arc
 poly path meeting at the arc-locus joint. The :meet angle default of pi gives a
-smooth C1 joint (ref. smooth 2-Lombardi corollary) or, when :joint is :midpoint,
-the edge-midpoint splice. :bend rotates the locus joint around its circle.
-
+smooth C1 joint (ref. smooth 2-Lombardi) or, when :joint is :midpoint,
 Each segment is {:cx cy r cw x y} (arc) or {:line true x y} (straight), chaining
 from the start point to (x y).
 ```
-  [u v pu pv alpha tgt tol meet bend join &opt max-sweep line-mode]
+  [u v pu pv alpha tgt tol meet bend join &opt max-sweep line-mode k radii]
   (def ac (_arc-circle pu pv alpha))
   (if (ac :line)
     (let [chord (_line-angle (math/atan2 (- (pv 1) (pu 1)) (- (pv 0) (pu 0))))
@@ -411,31 +562,25 @@ from the start point to (x y).
       (put rec :residual (if (> vdev udev) vdev udev))
       (put rec :segments @[{:line true :x (pv 0) :y (pv 1)}])
       rec)
-    (do
-      (let [residual (if line-mode
-                       (math/abs (_line-diff
-                                  (_line-angle tgt)
-                                  (_line-angle (_out-angle ac pv))))
-                       (math/abs (_delta tgt (_out-angle ac pv))))
-            rec (_basis u v pu pv)
-            seg (_seg ac pv false)]
-        (if (and (<= residual tol)
-                 (or (nil? max-sweep)
-                     (<= (_seg-sweep seg pu) max-sweep)))
-          (do (put rec :kind :arc)
-              (put rec :residual residual)
-              (put rec :segments @[seg])
-              rec)
-          (let [P (_poly-joint pu pv alpha tgt meet bend join)]
-            (put rec :kind :poly)
-            (put rec :residual residual)
-            (put rec :joint P)
-            (put rec :segments @[(_seg (_arc-circle pu P alpha) P false)
-                                 (_seg (_arc-circle pv P tgt) pv true)])
-            rec))))))
+    (let [residual (if line-mode
+                     (math/abs (_line-diff (_line-angle tgt)
+                                           (_line-angle (_out-angle ac pv))))
+                     (math/abs (_delta tgt (_out-angle ac pv))))
+          rp (and radii (get radii u))
+          rq (and radii (get radii v))
+          rec (_basis u v pu pv)
+          segs (_edge-chain
+                pu pv alpha tgt tol meet bend join max-sweep (or k 2) rp rq)]
+      (put rec :residual residual)
+      (put rec :segments segs)
+      (put rec :kind (case (length segs) 1 :arc 2 :poly :chain))
+      (when (= (length segs) 2)
+        (put rec :joint @[((segs 0) :x) ((segs 0) :y)]))
+      rec)))
+
 
 # ==============================================================================
-#  Crossing measurement and bend overlap reduction
+#  Crossing measurement and overlap reduction
 # ==============================================================================
 
 (defn- _arc-sweep-span
@@ -477,7 +622,7 @@ The sweep runs counter-clockwise from the reference angle by `span` radians.```
     pts))
 
 (defn- _push-seg-t
-  ```Append point at t along a + t*(dx, dy) to pts, when t is on the segment.```
+  "Append point at t along a + t*(dx, dy) to pts, when t is on the segment."
   [pts a dx dy t]
   (when (and (>= t -1e-9) (<= t 1.000000001))
     (array/push pts @[(+ (a 0) (* t dx)) (+ (a 1) (* t dy))])))
@@ -501,7 +646,7 @@ The sweep runs counter-clockwise from the reference angle by `span` radians.```
     pts))
 
 (defn- _record-segments
-  "Each is {:line bool :a start :b end :seg x}, chained from start at (x0 y0)."
+  "Each segment {:line bool :a start :b end :seg x}, chained from start at (x0 y0)."
   [rec]
   (def segs @[])
   (var cur @[(rec :x0) (rec :y0)])
@@ -567,46 +712,51 @@ The sweep runs counter-clockwise from the reference angle by `span` radians.```
 (defn- _proper-intersections
   "Distinct proper intersection points of two edges"
   [a b]
-  (def au (a :u)) (def av (a :v))
-  (def bu (b :u)) (def bv (b :v))
-  (if (or (= au bu) (= au bv) (= av bu) (= av bv))
-    @[]
-    (let [sa (_record-segments a)
-          sb (_record-segments b)
-          pts @[]]
-      (defn add [x y p]
-        (when (and p
-                   (> (_cross-angle-at x y p) 1e-6)
-                   (not (some (fn [q]
-                                (<= (math/hypot (- (p 0) (q 0))
-                                                (- (p 1) (q 1)))
-                                    1e-7))
-                              pts)))
-          (array/push pts p)))
-      (each x sa
-        (each y sb
-          (cond
-            (and (x :line) (y :line))
-            (let [p (_line-line-x (x :a) (x :b) (y :a) (y :b))]
-              (when (and p (_cm__segments-cross? (x :a) (x :b) (y :a) (y :b)))
-                (add x y p)))
-            (x :line)
-            (each p (_line-x-pts (x :a) (x :b) @[((y :seg) :cx) ((y :seg) :cy)]
-                                 ((y :seg) :r))
-              (when (_arc-covers? (y :seg) (y :a) p)
-                (add x y p)))
-            (y :line)
-            (each p (_line-x-pts (y :a) (y :b) @[((x :seg) :cx) ((x :seg) :cy)]
-                                 ((x :seg) :r))
-              (when (_arc-covers? (x :seg) (x :a) p)
-                (add x y p)))
-            true
-            (each p (_circle-x-pts @[((x :seg) :cx) ((x :seg) :cy)] ((x :seg) :r)
-                                   @[((y :seg) :cx) ((y :seg) :cy)] ((y :seg) :r))
-              (when (and (_arc-covers? (x :seg) (x :a) p)
-                         (_arc-covers? (y :seg) (y :a) p))
-                (add x y p))))))
-      pts)))
+  (let [sa (_record-segments a)
+        sb (_record-segments b)
+        ends @[@[(a :x0) (a :y0)] @[(a :x1) (a :y1)]
+               @[(b :x0) (b :y0)] @[(b :x1) (b :y1)]]
+        at-end? (fn [p]
+                  (some (fn [q]
+                          (<= (math/hypot (- (p 0) (q 0))
+                                          (- (p 1) (q 1)))
+                              1e-7))
+                        ends))
+        pts @[]]
+    (defn add [x y p]
+      (when (and p
+                 (not (at-end? p))
+                 (> (_cross-angle-at x y p) 1e-6)
+                 (not (some (fn [q]
+                              (<= (math/hypot (- (p 0) (q 0))
+                                              (- (p 1) (q 1)))
+                                  1e-7))
+                            pts)))
+        (array/push pts p)))
+    (each x sa
+      (each y sb
+        (cond
+          (and (x :line) (y :line))
+          (let [p (_line-line-x (x :a) (x :b) (y :a) (y :b))]
+            (when (and p (_cm__segments-cross? (x :a) (x :b) (y :a) (y :b)))
+              (add x y p)))
+          (x :line)
+          (each p (_line-x-pts (x :a) (x :b) @[((y :seg) :cx) ((y :seg) :cy)]
+                               ((y :seg) :r))
+            (when (_arc-covers? (y :seg) (y :a) p)
+              (add x y p)))
+          (y :line)
+          (each p (_line-x-pts (y :a) (y :b) @[((x :seg) :cx) ((x :seg) :cy)]
+                               ((x :seg) :r))
+            (when (_arc-covers? (x :seg) (x :a) p)
+              (add x y p)))
+          true
+          (each p (_circle-x-pts @[((x :seg) :cx) ((x :seg) :cy)] ((x :seg) :r)
+                                 @[((y :seg) :cx) ((y :seg) :cy)] ((y :seg) :r))
+            (when (and (_arc-covers? (x :seg) (x :a) p)
+                       (_arc-covers? (y :seg) (y :a) p))
+              (add x y p))))))
+    pts))
 
 (defn- _drawing-nodes
   "Endpoints of every record in `recs`, one entry per incidence (not unique)."
@@ -655,8 +805,147 @@ The sweep runs counter-clockwise from the reference angle by `span` radians.```
           (array/push seen p)))))
   (length seen))
 
+(defn- _slot-alpha
+  "Slot angle at p of an arc segment leaving p (inverse of _arc-circle)."
+  [seg p]
+  (if (seg :line)
+    (math/atan2 (- (seg :y) (p 1)) (- (seg :x) (p 0)))
+    (let [lam (if (seg :cw) (- (seg :r)) (seg :r))
+          nx (/ (- (seg :cx) (p 0)) lam)
+          ny (/ (- (seg :cy) (p 1)) lam)]
+      (math/atan2 (- nx) ny))))
+
+(defn- _single-arc-candidate
+  "Single arc tangent at p that replaces a multi-arc record, or nil."
+  [rec tolerance max-sweep]
+  (def sg (rec :segments))
+  (def n (length sg))
+  (if (< n 2)
+    nil
+    (let [s0 (sg 0)
+          slast (sg (- n 1))
+          p @[(rec :x0) (rec :y0)]
+          q @[(rec :x1) (rec :y1)]]
+      (when (not (some (fn [s] (s :line)) sg))
+        (def ac (_arc-circle p q (_slot-alpha s0 p)))
+        (when (and (not (ac :line))
+                   (<= (math/abs (_delta (_out-angle ac q)
+                                         (_out-angle slast q)))
+                       tolerance))
+          (def cand {:cx (ac :cx) :cy (ac :cy) :r (ac :r) :cw (ac :cw)
+                     :x (q 0) :y (q 1) :line false})
+          (when (or (nil? max-sweep) (<= (_seg-sweep cand p) max-sweep))
+            cand))))))
+
+(defn- _with-segments
+  "Copy record `rec` with a new segment list `seg`."
+  [rec segs]
+  (def nr @{})
+  (eachp [k v] rec (put nr k v))
+  (put nr :segments segs)
+  (def n (length segs))
+  (put nr :kind (case n 1 :arc 2 :poly :chain))
+  (put nr :joint (if (= n 2) @[((segs 0) :x) ((segs 0) :y)] nil))
+  nr)
+
+(defn- _merge-runs
+  "Merge maximal runs of arc segments on the same circle with same orientation."
+  [sg p]
+  (def n (length sg))
+  (def out @[])
+  (var i 0)
+  (while (< i n)
+    (def s (sg i))
+    (if (s :line)
+      (do (array/push out s) (++ i))
+      (do
+        (var j i)
+        (while (and (< (+ j 1) n)
+                    (not ((sg (+ j 1)) :line))
+                    (< (math/hypot (- ((sg (+ j 1)) :cx) (s :cx))
+                                   (- ((sg (+ j 1)) :cy) (s :cy)))
+                       1e-6)
+                    (< (math/abs (- ((sg (+ j 1)) :r) (s :r))) 1e-6)
+                    (= ((sg (+ j 1)) :cw) (s :cw)))
+          (++ j))
+        (if (> j i)
+          (let [start (if (= i 0) p @[((sg (- i 1)) :x) ((sg (- i 1)) :y)])
+                end (sg j)
+                merged {:cx (s :cx) :cy (s :cy) :r (s :r) :cw (s :cw)
+                        :x (end :x) :y (end :y) :line false}]
+            (var run-sum 0.0)
+            (loop [k :range [i (+ j 1)]]
+              (def sk (sg k))
+              (def sk-start (if (= k 0) p @[((sg (- k 1)) :x) ((sg (- k 1)) :y)]))
+              (set run-sum (+ run-sum (_seg-sweep sk sk-start))))
+            (if (< (math/abs (- (_seg-sweep merged start) run-sum)) 1e-6)
+              (array/push out merged)
+              (loop [k :range [i (+ j 1)]] (array/push out (sg k)))))
+          (array/push out s))
+        (set i (+ j 1)))))
+  out)
+
+(defn- _merge-records
+  "Apply the same-circle run merge to every multi-segment edge."
+  [recs]
+  (map (fn [rec]
+         (def sg (rec :segments))
+         (if (>= (length sg) 2)
+           (let [runs (_merge-runs sg @[(rec :x0) (rec :y0)])]
+             (if (< (length runs) (length sg))
+               (_with-segments rec runs)
+               rec))
+           rec))
+       recs))
+
+(defn- _record-overlaps-others
+  "Overlap count between one edge and every other except `skip`."
+  [rec recs skip]
+  (var total 0)
+  (loop [j :range [0 (length recs)]]
+    (when (not= j skip)
+      (set total (+ total (_record-overlaps rec (recs j))))))
+  total)
+
+(defn- _proper-count-others
+  "Proper-intersection count between one edge and every other."
+  [rec recs skip]
+  (var total 0)
+  (loop [j :range [0 (length recs)]]
+    (when (not= j skip)
+      (set total (+ total (length (_proper-intersections rec (recs j)))))))
+  total)
+
+(defn- _simplify-records
+  ```Greedy arc-count reduction without increasing crossings or overlaps.
+
+Consecutive same-circle runs are merged first, multi-arcs are collapsed to
+a single arc where possible.```
+  [recs tolerance max-sweep]
+  (def out (array ;recs))
+  (loop [i :range [0 (length out)]]
+    (def rec (out i))
+    (def sg (rec :segments))
+    (when (and (or (= (rec :kind) :poly) (= (rec :kind) :chain))
+               (>= (length sg) 2))
+      (def p @[(rec :x0) (rec :y0)])
+      (def runs (_merge-runs sg p))
+      (def base (if (< (length runs) (length sg))
+                  (_with-segments rec runs)
+                  rec))
+      (def cand (_single-arc-candidate base tolerance max-sweep))
+      (def best (if cand (_with-segments base @[cand]) base))
+      (when (< (length (best :segments)) (length sg))
+        (def pi-before (_proper-count-others rec out i))
+        (def pi-after (_proper-count-others best out i))
+        (def ovl-before (_record-overlaps-others rec out i))
+        (def ovl-after (_record-overlaps-others best out i))
+        (when (and (<= pi-after pi-before) (<= ovl-after ovl-before))
+          (set (out i) best)))))
+  out)
+
 (defn- _record-crossing-angle
-  "Smallest folded angle (radians in [0, pi/2]) at which two edges cross."
+  ```Smallest folded angle (radians in [0, pi/2]) at which two edges cross.```
   [a b]
   (let [sa (_record-segments a)
         sb (_record-segments b)]
@@ -744,7 +1033,7 @@ The sweep runs counter-clockwise from the reference angle by `span` radians.```
   pts)
 
 (defn- _spring-energy
-  ```Smooth repulsion between two records' sampled points.```
+  ```Smooth repulsion between two edges' sampled points.```
   [sa sb cutoff]
   (var e 0.0)
   (def c2 (* cutoff cutoff))
@@ -981,7 +1270,10 @@ Returns [violations depth]."
           (put ((st :matrix) j) i c))))
     st))
 
-#  metrics
+
+# ==============================================================================
+#  Metrics
+# ==============================================================================
 
 (defn- _matrix-total
   "Overlaps of every edge pair, i.e. total overlap count."
@@ -1067,7 +1359,10 @@ Returns [violations depth]."
     (set c (+ c (_record-curvature ((st :recs) i)))))
   c)
 
-#  rebuilding
+
+# ==============================================================================
+#  Rebuilding
+# ==============================================================================
 
 (defn- _rebuild-record
   "Rebuild edge i from the current rotations, bends, and positions."
@@ -1082,7 +1377,7 @@ Returns [violations depth]."
                          (_slot-angle (st :slots) (st :deg) (e 0) i (st :rot-acc))
                          (_slot-angle (st :slots) (st :deg) (e 1) i (st :rot-acc))
                          (st :tol) (st :meet) ((st :bends) i) (st :join)
-                         (st :max-sweep)))
+                         (st :max-sweep) nil (st :max-arcs) (st :radii)))
       (put (st :boxes) i (_record-box ((st :recs) i)))
       (put (st :samples) i (_record-samples ((st :recs) i) (st :spring-samples))))))
 
@@ -1118,7 +1413,10 @@ Returns [violations depth]."
     (when (_record-degenerate? ((st :recs) i)) (set d true)))
   d)
 
-#  joint-bend pass
+
+# ==============================================================================
+#  Joint bends
+# ==============================================================================
 
 (defn- _lex-better?
   "Is candidate (cap fn cg cgd ang ms e curv) better than the current best?"
@@ -1183,7 +1481,8 @@ Returns [committed? overlaps]."
       (let [flipped (_edge-record u v pu pv
                                   (_slot-angle (st :slots) (st :deg) u i (st :rot-acc))
                                   (_slot-angle (st :slots) (st :deg) v i (st :rot-acc))
-                                  (st :tol) (st :meet) cand (st :join) max-sweep)]
+                                  (st :tol) (st :meet) cand (st :join) max-sweep
+                                  nil (st :max-arcs) (st :radii))]
         (when (not (_record-degenerate? flipped))
           (let [fbox (_record-box flipped)
                 ms (if max-sweep (_record-max-sweep flipped) 0.0)
@@ -1271,8 +1570,9 @@ Returns [committed? overlaps]."
               pu (get (st :pacc) u) pv (get (st :pacc) v)
               sweep (st :sweep)]
           (when (and pu pv)
-            (let [coarse (seq [k :in (st :offsets)]
-                              (+ ((st :bends) i) (* math/pi (/ k sweep))))
+            (let [coarse-step (/ math/pi sweep)
+                  coarse (seq [k :in (st :offsets)]
+                              (+ ((st :bends) i) (* coarse-step k)))
                   [c1 _] (_trial st i u v pu pv coarse)]
               (when c1 (set changed true)))
             (loop [level :range [1 (inc (st :relax-levels))]]
@@ -1283,13 +1583,10 @@ Returns [committed? overlaps]."
                 (when c2 (set changed true)))))))))
   changed)
 
+
+# ==============================================================================
 #  Tangent-frame sweep
-#
-# - rotate each vertex's slot frame across the :sweep angular grid
-# - keep the rotation that lowers the drawing total
-# - refine the frame angles below :sweep resolution
-# - check bends on the rotated frames
-# - rotations and bends are reverted if the sweep didn't improve the drawing
+# ==============================================================================
 
 (defn- _frame-sweep
   "Perform a frame sweep."
@@ -1320,7 +1617,7 @@ Returns [committed? overlaps]."
           (var best-total (_incident-total st v))
           (var [best-cg best-cgd] (_incident-clearance st v))
           (var best-curvature (_incident-curvature st v))
-          (each cand (seq [k :in (st :offsets)] (+ cur-r (* two-pi (/ k sweep))))
+          (each cand (seq [k :in (st :offsets)] (+ cur-r (* (/ two-pi sweep) k)))
             (when (not= cand cur-r)
               (put rot-acc v cand)
               (_rebuild-incident st v)
@@ -1400,7 +1697,10 @@ Returns [committed? overlaps]."
           (put matrix i (array ;(saved-matrix i))))
         (_rebuild-all st)))))
 
-#  vertex relaxation
+
+# ==============================================================================
+#  Vertex relaxation
+# ==============================================================================
 
 (defn- _bounds-of
   "Axis-aligned bounds of a position table, as @[[minx miny] [maxx maxy]]."
@@ -1415,7 +1715,7 @@ Returns [committed? overlaps]."
     @[mmin mmax]))
 
 (defn- _clamp-pt
-  "Clamp  point `p` to the drawing's bounds."
+  "Clamp point `p` to the drawing's bounds."
   [bounds p]
   @[(if (< (p 0) ((bounds 0) 0)) ((bounds 0) 0)
         (if (> (p 0) ((bounds 1) 0)) ((bounds 1) 0) (p 0)))
@@ -1558,7 +1858,10 @@ Returns [committed? overlaps]."
           (put matrix i (array ;(saved-matrix i))))
         (_rebuild-all st)))))
 
-#  edge-order sweep and backtracking
+
+# ==============================================================================
+#  Edge-order sweep and backtracking
+# ==============================================================================
 
 (defn- _edge-order-sweep
   "Greedily swap adjacent edge orders at each vertex, save improvements."
@@ -1689,7 +1992,7 @@ Returns [committed? overlaps]."
                           (_restore-all st snap))))))))))))))
 
 (defn- _edge-order-backtrack
-  "Bounded depth-first search over slot swaps (run after greedy edge-order)."
+  "DFS over slot swaps at each vertex, overlaps first, then poly count, curvature last."
   [st]
   (let [n (st :n)
         baseline (_matrix-total (st :matrix) n)]
@@ -1708,18 +2011,123 @@ Returns [committed? overlaps]."
     (_refresh-all st)))
 
 # ==============================================================================
+#  Paired bend repair
+# ==============================================================================
+
+(defn- _record-for-bend
+  "Edge i when joint bend is b."
+  [st i b]
+  (let [e ((st :edges) i)
+        pacc (st :pacc)
+        pu (get pacc (e 0))
+        pv (get pacc (e 1))]
+    (when (and pu pv)
+      (_edge-record (e 0) (e 1) pu pv
+                    (_slot-angle (st :slots) (st :deg) (e 0) i (st :rot-acc))
+                    (_slot-angle (st :slots) (st :deg) (e 1) i (st :rot-acc))
+                    (st :tol) (st :meet) b (st :join)
+                    (st :max-sweep) nil (st :max-arcs) (st :radii)))))
+
+(defn- _pair-crossings
+  "Proper crossings between two records, adjacent pairs included."
+  [a b]
+  (length (_proper-intersections a b)))
+
+(defn- _local-crossings
+  "Crossings with an edge of {i, j}, when i uses ri and j uses rj."
+  [st i j ri rj]
+  (let [recs (st :recs) n (st :n)]
+    (var c (_pair-crossings ri rj))
+    (for k 0 n
+      (when (and (not= k i) (not= k j))
+        (def rk (recs k))
+        (set c (+ c (_pair-crossings ri rk) (_pair-crossings rj rk)))))
+    c))
+
+(defn- _crossing-pairs
+  "Return every pair of edges that currently crosses."
+  [st]
+  (def recs (st :recs))
+  (def n (st :n))
+  (def out @[])
+  (for i 0 n
+    (for j (+ i 1) n
+      (when (> (_pair-crossings (recs i) (recs j)) 0)
+        (array/push out @[i j]))))
+  out)
+
+(defn- _pair-repair
+  "Repair crossings with paired joint-bend moves."
+  [st]
+  (def steps (st :pair-repair))
+  (when (and (number? steps) (>= steps 2) (> (st :n) 1))
+    (def bends (st :bends))
+    (def cands (map (fn [k] (* math/pi (/ k steps)))
+                    (range steps)))
+    (var rounds 0)
+    (var changed true)
+    (while (and changed (< rounds 3))
+      (set changed false)
+      (++ rounds)
+      (each pair (_crossing-pairs st)
+        (let [i (pair 0)
+              j (pair 1)
+              ri0 ((st :recs) i)
+              rj0 ((st :recs) j)
+              base-score (_local-crossings st i j ri0 rj0)]
+        (var best base-score)
+        (var best-bi (bends i))
+        (var best-bj (bends j))
+        (var best-ri ri0)
+        (var best-rj rj0)
+        (each bi cands
+          (def ri (_record-for-bend st i bi))
+          (when (and ri (not (_record-degenerate? ri)))
+            (each bj cands
+              (def rj (_record-for-bend st j bj))
+              (when (and rj (not (_record-degenerate? rj)))
+                (def c (_local-crossings st i j ri rj))
+                (when (< c best)
+                  (set best c)
+                  (set best-bi bi)
+                  (set best-bj bj)
+                  (set best-ri ri)
+                  (set best-rj rj))))))
+        (when (< best base-score)
+          (put bends i best-bi)
+          (put bends j best-bj)
+          (put (st :recs) i best-ri)
+          (put (st :recs) j best-rj)
+          (put (st :boxes) i (_record-box best-ri))
+          (put (st :boxes) j (_record-box best-rj))
+          (put (st :samples) i (_record-samples best-ri (st :spring-samples)))
+          (put (st :samples) j (_record-samples best-rj (st :spring-samples)))
+          (set changed true))))
+    (when changed (_refresh-all st)))))
+
+
+# ==============================================================================
 #  Overlap reduction
 # ==============================================================================
 
 (defn _reduce-overlap
   ```Deterministic greedy reduction of arc-overlap crossings.
 
-  Returns [recs overlaps-before overlaps-after positions slot-rot
-           smallest-crossing-angle].```
+Runs six stages in order;
+  1. joint-bend passes (:passes then :relax-levels subdivisions)
+  2. tangent-frame sweep (:frame-sweep)
+  3. vertex relaxation (:vertex-relax)
+  4. edge-order sweep (:edge-order-sweep)
+  5. slot-swap backtracking (:edge-order-backtrack)
+  6. paired joint-bend repair (:pair-repair)
+
+ Returns [recs overlaps-before overlaps-after positions slot-rot
+          smallest-crossing-angle].```
   [pos edges slots deg tol meet join base-bend recs passes slot-rot sweep
    relax-levels spring spring-cutoff spring-samples arc-clearance node-clearance
-   frame-sweep max-sweep vertex-relax vertex-step crossing-angle
-   edge-order-sweep edge-order-backtrack backtrack-depth backtrack-nodes]
+   frame-sweep max-sweep max-arcs radii
+   vertex-relax vertex-step crossing-angle edge-order-sweep
+   edge-order-backtrack backtrack-depth backtrack-nodes pair-repair]
   (def n (length recs))
   (if (or (< n 2) (< passes 1))
     @[recs 0 0 pos slot-rot 0.0]
@@ -1734,6 +2142,7 @@ Returns [committed? overlaps]."
                                  :arc-clearance arc-clearance
                                  :node-clearance node-clearance
                                  :frame-sweep frame-sweep :max-sweep max-sweep
+                                 :max-arcs max-arcs :radii radii
                                  :vertex-relax vertex-relax
                                  :vertex-step vertex-step
                                  :crossing-angle crossing-angle
@@ -1741,6 +2150,7 @@ Returns [committed? overlaps]."
                                  :edge-order-backtrack edge-order-backtrack
                                  :backtrack-depth backtrack-depth
                                  :backtrack-nodes backtrack-nodes
+                                 :pair-repair pair-repair
                                  :tol tol :meet meet :join join})
             before (_matrix-total (st :matrix) n)]
         (loop [p :range [0 passes]]
@@ -1751,6 +2161,8 @@ Returns [committed? overlaps]."
         (when (and (st :edge-order-sweep) (st :edge-order-backtrack)
                    (> (st :backtrack-nodes) 0) (<= n 30))
           (_edge-order-backtrack st))
+        (when (and (st :pair-repair) (<= n 24))
+          (_pair-repair st))
         (def final-angle
           (if (st :crossing-angle)
             (do (var mn math/inf)
@@ -1831,6 +2243,7 @@ Returns [committed? overlaps]."
   out)
 
 (defn- _coverage-overlaps
+  "Total pair overlaps, shared-vertex included."
   [recs]
   (var total 0)
   (loop [i :range [0 (length recs)]]
@@ -2140,7 +2553,13 @@ Returns [committed? overlaps]."
         (def sym-residual (sym-candidate :residual))
         (def old-residual (or (result :residual) sym-residual))
         (def node-radius (get kws :node-radius 0.25))
-        (when (and (<= total before)
+        (def old-graph (_graph-crossings original))
+        (def sym-graph (_graph-crossings (sym-candidate :arcs)))
+        (def old-visible (_visible-crossings original node-radius))
+        (def sym-visible (_visible-crossings (sym-candidate :arcs) node-radius))
+        (when (and (<= sym-graph old-graph)
+                   (<= sym-visible old-visible)
+                   (<= total before)
                    (or (< total before)
                        (<= sym-residual (+ old-residual 1e-9))))
           @{:pos snapped :eligible true :iterations 0
@@ -2155,14 +2574,15 @@ Returns [committed? overlaps]."
             :slot-rot (sym-candidate :slot-rot)
             :overlaps-before (or (result :overlaps-before) total)
             :overlaps-after total
-            :crossings-graph-before (_graph-crossings original)
-            :crossings-graph-after (_graph-crossings (sym-candidate :arcs))
-            :crossings-visible-before (_visible-crossings original node-radius)
-            :crossings-visible-after (_visible-crossings (sym-candidate :arcs) node-radius)
+            :crossings-graph-before old-graph
+            :crossings-graph-after sym-graph
+            :crossings-visible-before old-visible
+            :crossings-visible-after sym-visible
             :min-arc-clearance (_min-arc-clearance (sym-candidate :arcs))
             :min-node-clearance (_min-node-clearance (sym-candidate :arcs) snapped)
             :crossing-angle nil
             :symmetry @{:k (sym :k) :theta (sym :theta)}})))))
+
 
 # ==============================================================================
 #  layout-polyarc
@@ -2179,48 +2599,63 @@ Returns [committed? overlaps]."
     :height         — canvas height (default 8.0)
 
     :base           — initial vertex placement: :spring (default),
-                      :circle, :spectral, :radial, or :pos
+                      :circle, :spectral, :radial, :tangent-circles or :pos
 
     :pos            — {node [x y]} used when :base is :pos
 
-    :spring-iterations — iterations of the spring layout (default 300)
+    :spring-iterations — iterations of the initial spring layout
+                         (default 300)
 
-    :slot-rot       — rotation of the tangent slot frame, or nil for none
+    :slot-rot       — rotation of the tangent slot frame: nil for none
                       (default), a global rotation in radians, or a
                       {vertex [radian]} table of per-vertex offsets
+                      (missing vertices use 0)
 
     :slot-order     — :embedding (default) takes the circular order from the
-                      planar rotation system, :radial sorts each vertex's
-                      incident edges by angle from the inward radius
+                       planar rotation system, :radial sorts each vertex's
+                       incident edges by angle from the inward radius
 
     :symmetry       — detect rotational symetry and use exact orbits when
                       true (default false)
 
     :tol            — single-arc acceptance, endpoint tangent mismatch
-                      in radians (default 0.25) larger values keep more
+                      in radians (default 0.25), larger values keep more
                       edges as single arcs
 
     :meet-angle     — meeting angle of the arcs of a poly edge, in radians
-                     (default pi)
+                      (default pi)
 
-    :joint          — poly-edge splice: :locus (default) or :midpoint
+    :joint          — poly-edge splice; :locus (default), :midpoint or
+                      :tangent (requires a circle packing :base)
 
     :bend           — rotation of the locus joint around its circle, in
                       radians (default 0.0)
 
-    :reduce-overlap — the edge reduction stages. set to false, crossing quality
-                      will decrease, but not correctness.
+    :reduce-overlap — the edge reduction stages. If set to false, crossing
+                      quality will decrease, but not correctness.
 
-    :reduce-passes  — greedy sweep iterations (default 2) stops as soon as
-                      a pass doesn't change the result.
+    :reduce-passes  —  greedy sweep iterations (default 2) stops as soon as
+                       a pass doesn't change the result.
 
     :sweep          — candidate joint rotations per poly-edge per pass,
                       evenly spaced in [0 .. pi) (default 8)
 
-    :node-radius    — node radius in layout units (default 0.25)
+    :node-radius    — node radius in layout units, used to decide which
+                      crossing points are hidden under a node when reporting
+                      :crossings-visible-*, and as the base of the default
+                      :node-clearance (default 0.25)
 
     :max-sweep      — cap on any single arc segment's sweep, in radians
                       (default 1.0).
+
+    :max-arcs       — maximum number of circular arcs per edge (default 2).
+
+    :simplify-arcs  — collapse multi-arc splices to a single arc if possible
+                      (default true) set false for strict  Lombardi tangents
+
+    :simplify-tol   — endpoint tangent mismatch (radians) for merging non
+                      identical circles (default 0.35) has no effect
+                      if :simplify-arcs is false
 
     :relax-levels   — refinement rounds run after the coarse sweep (default 4)
 
@@ -2235,7 +2670,7 @@ Returns [committed? overlaps]."
     :crossing-angle — when true, rank candidates by a larger smallest crossing
                       angle (arc-RAC) before repulsion energy (default false)
 
-    :spring         —  break overlap-count ties by minimizing residual
+    :spring         — break overlap-count ties by minimizing residual
                       arc-arc proximity energy (default true)
 
     :spring-cutoff  — pairwise sample distance below which spring energy
@@ -2251,15 +2686,20 @@ Returns [committed? overlaps]."
     :node-clearance — minimum desired distance between nodes.
 
     :edge-order-sweep — greedy adjacent edge-order swaps at each vertex
-                      (default true)
+                        (default true)
 
     :edge-order-backtrack — bounded DFS to to reduce overlaps (default true)
+
+    :pair-repair    — paired joint-bend repair rounds  (default 8, 0 to disable)
+
     :backtrack-depth — maximum slot-swap depth (default 3)
+
     :backtrack-nodes — maximum backtracking nodes (default 8)
 
     :arcs           — use precomputed edges rather than construction
                       ({:x0 :y0 :x1 :y1 :kind :segments ...})
                       (default nil)
+
 
   Returns
      {:pos {node [x y]}            ; vertex positions (the spring drawing)
@@ -2289,12 +2729,11 @@ Returns [committed? overlaps]."
       :crossings-visible-before n ; visible distinct crossings before and
       :crossings-visible-after n  ;   after reduction
 
-      :symmetry {:k n :theta a}   ; rotation used, when symmetry routing won
+      :symmetry {:k n :theta a}   ; rotation used for symmetry routing
 
       :arcs [{:u u :v v :x0 y0    ; one record per edge; :segments chain
               :x1 y1 :kind ...}   ;   from (x0 y0) to (x1 y1)
-
-             {:kind :line ...} | {:kind :arc ...} | {:kind :poly ...}]}
+             {:kind :line ...} | {:kind :arc ...} | {:kind :poly ...}]}.
 ```
   [g & opts]
   (let [kws (table ;opts)
@@ -2306,11 +2745,17 @@ Returns [committed? overlaps]."
         slot-rot (get kws :slot-rot nil)
         meet (get kws :meet-angle math/pi)
         bend (get kws :bend 0.0)
+        base-kw (get kws :base :spring)
+        pack-base? (or (= base-kw :tangent-circles)
+                       (= base-kw :circle-packing))
         join (get kws :joint :locus)
         reduce-overlap (get kws :reduce-overlap true)
         reduce-passes (get kws :reduce-passes 2)
         sweep (get kws :sweep 8)
         max-sweep (get kws :max-sweep 1.0)
+        max-arcs (get kws :max-arcs 2)
+        simplify-arcs (get kws :simplify-arcs true)
+        simplify-tol (get kws :simplify-tol 0.35)
         node-radius (get kws :node-radius 0.25)
         relax-levels (get kws :relax-levels 4)
         frame-sweep (get kws :frame-sweep true)
@@ -2341,6 +2786,8 @@ Returns [committed? overlaps]."
         edge-order-backtrack (get kws :edge-order-backtrack true)
         backtrack-depth (get kws :backtrack-depth 3)
         backtrack-nodes (get kws :backtrack-nodes 8)
+        pair-repair (let [v (get kws :pair-repair 8)]
+                      (if (= v true) 8 (if (number? v) v 0)))
         n (length (nodes g))]
 
     (def result
@@ -2348,6 +2795,7 @@ Returns [committed? overlaps]."
         (<= n 0)
         @{:pos @{} :eligible true :iterations 0 :residual 0.0
           :lombardi true :poly false :arcs @[]}
+
         (= n 1)
         (let [v ((nodes g) 0)]
           @{:pos @{v [(/ width 2) (/ height 2)]} :eligible true
@@ -2355,20 +2803,23 @@ Returns [committed? overlaps]."
             :lombardi true :poly false :arcs @[]})
         true
         (do
-          (let [pos (case (get kws :base :spring)
+          (let [cp (if pack-base?
+                     (_circle-pack-pos g width height))
+                pos (case base-kw
                       :spring (get (_sp_layout-spring
                                     g :width width :height height
                                     :iterations spring-iterations
                                     :smooth-iterations 0) :pos)
                       :circle (_circle-base g width height)
-                      :circular (_circle-base g width height) # alias
+                      :circular (_circle-base g width height)
                       :spectral (get (_s_layout-spectral
-                                      g :width width
-                                      :height height) :pos)
+                                      g :width width :height height) :pos)
                       :radial (get (_r_layout-radial
-                                    g :width width
-                                    :height height) :pos)
+                                    g :width width :height height) :pos)
+                      :tangent-circles (cp :pos)
+                      :circle-packing (cp :pos)
                       :pos (get kws :pos @{}))
+                cp-radii (and cp (cp :radii))
                 effective-slot-rot (cond
                                      (and (= slot-order :radial) (nil? slot-rot))
                                      (_radial-slot-rot pos)
@@ -2404,7 +2855,8 @@ Returns [committed? overlaps]."
                         (def rec (_edge-record u v pu pv
                                                (_slot-angle slots deg u ei slot-rot*)
                                                (_slot-angle slots deg v ei slot-rot*)
-                                               tol meet bend join max-sweep))
+                                               tol meet bend join max-sweep nil max-arcs
+                                               cp-radii))
                         (array/push recs rec)
                         (set residual (+ residual (rec :residual)))
                         (when (= (rec :kind) :poly) (set any-poly true)))))
@@ -2416,44 +2868,66 @@ Returns [committed? overlaps]."
                              bend recs reduce-passes effective-slot-rot sweep
                              relax-levels spring spring-cutoff
                              spring-samples arc-clearance node-clearance
-                             frame-sweep max-sweep
+                             frame-sweep max-sweep max-arcs cp-radii
                              vertex-relax vertex-step crossing-angle edge-order-sweep
-                             edge-order-backtrack backtrack-depth backtrack-nodes)]
+                             edge-order-backtrack backtrack-depth backtrack-nodes
+                             pair-repair)]
+                        (def recs-m (_merge-records recs2))
+                        (def recs3 (if simplify-arcs
+                                     (_simplify-records
+                                      recs-m simplify-tol max-sweep)
+                                     recs-m))
                         (def graph-before (_graph-crossings recs))
-                        (def graph-after (_graph-crossings recs2))
-                        (def visible-before (_visible-crossings recs node-radius))
-                        (def visible-after (_visible-crossings recs2 node-radius))
-
+                        (def graph-after (_graph-crossings recs3))
+                        (def visible-before (_visible-crossings
+                                             recs node-radius))
+                        (def visible-after (_visible-crossings
+                                            recs3 node-radius))
                         @{:pos pos2 :eligible true :iterations 0
-                          :residual (/ (reduce (fn [s a] (+ s (a :residual))) 0.0 recs2)
-                                       (max 1 (length recs2)))
+                          :residual (/ (reduce (fn [s a]
+                                                 (+ s (a :residual))) 0.0 recs3)
+                                       (max 1 (length recs3)))
                           :lombardi true
-                          :poly (not (empty? (seq [a :in recs2
-                                                   :when (= (a :kind) :poly)] true)))
-                          :arcs recs2
+                          :poly (not (empty? (seq [a :in recs3 :when (= (a :kind) :poly)] true)))
+                          :arcs recs3
                           :edges edges :slots slots :deg deg
                           :slot-rot final-slot-rot
-                          :overlaps-before before :overlaps-after after
-                          :min-arc-clearance (_min-arc-clearance recs2)
-                          :min-node-clearance (_min-node-clearance recs2 pos2)
+                          :overlaps-before before
+                          :overlaps-after (_coverage-overlaps recs3)
+                          :min-arc-clearance (_min-arc-clearance recs3)
+                          :min-node-clearance (_min-node-clearance recs3 pos2)
                           :crossings-graph-before graph-before
                           :crossings-graph-after graph-after
                           :crossings-visible-before visible-before
                           :crossings-visible-after visible-after
                           :crossing-angle final-angle}))
 
-                    @{:pos pos :eligible true :iterations 0
-                      :residual (/ residual (length recs))
-                      :lombardi true :poly any-poly :arcs recs
-                      :edges edges :slots slots :deg deg
-                      :overlaps-before 0 :overlaps-after 0
-                      :min-arc-clearance (_min-arc-clearance recs)
-                      :min-node-clearance (_min-node-clearance recs pos)
-                      :crossings-graph-before (_graph-crossings recs)
-                      :crossings-graph-after (_graph-crossings recs)
-                      :crossings-visible-before (_visible-crossings recs node-radius)
-                      :crossings-visible-after (_visible-crossings recs node-radius)}))))))))
-
-    (or (_symmetry-result
-         g kws result (fn [sub-kws] (layout-polyarc g ;(kvs sub-kws))))
-        result)))
+                    (let [recs-m (_merge-records recs)
+                          recs3 (if simplify-arcs
+                                  (_simplify-records recs-m simplify-tol max-sweep)
+                                  recs-m)]
+                      @{:pos pos :eligible true :iterations 0
+                        :residual (/ residual (length recs))
+                        :lombardi true
+                        :poly (not (empty? (seq [a :in recs3 :when (= (a :kind) :poly)] true)))
+                        :arcs recs3
+                        :edges edges :slots slots :deg deg
+                        :overlaps-before 0 :overlaps-after (_coverage-overlaps recs3)
+                        :min-arc-clearance (_min-arc-clearance recs3)
+                        :min-node-clearance (_min-node-clearance recs3 pos)
+                        :crossings-graph-before (_graph-crossings recs)
+                        :crossings-graph-after (_graph-crossings recs3)
+                        :crossings-visible-before (_visible-crossings
+                                                   recs node-radius)
+                        :crossings-visible-after (_visible-crossings
+                                                  recs3 node-radius)})))))))))
+    (def sym-result
+      (_symmetry-result g kws result
+                        (fn [sub-kws] (layout-polyarc g ;(kvs sub-kws)))))
+    (or sym-result
+        # A requested symmetry pass that finds nothing
+        (if (get kws :symmetry false)
+          (let [flat (table ;(kvs kws))]
+            (put flat :symmetry false)
+            (layout-polyarc g ;(kvs flat)))
+          result))))

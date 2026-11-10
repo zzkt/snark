@@ -9,8 +9,8 @@
     (add-edge g (e 0) (e 1)))
   g)
 
-(def block (petersen))      # start with Petersen graph
-(remove-nodes block 0 1 2)  # remove the path 0-1-2 (also removes incident edges)
+(def block (petersen))       # start with Petersen graph
+(remove-nodes block 0 1 2)   # remove the path 0-1-2 (also removes incident edges)
 
 (defn loupekine-snark
   [twin]
@@ -38,7 +38,7 @@
     (add-edge g "c" (string i "-6")))
   g)
 
-(defn invariants [name g]
+(defn report [name g]
   (printf "%-8s %2d vertices, %2d edges, %s, girth %d, %s, %s"
           name (node-count g) (edge-count g)
           (if (all (fn [v] (= 3 (degree g v))) (nodes g)) "cubic" "not cubic")
@@ -55,14 +55,41 @@
 (def first-snark (loupekine-snark :first))
 (def second-snark (loupekine-snark :second))
 
-(invariants "Petersen graph: " (petersen))
-(invariants "1st Loupekine snark: " first-snark)
-(invariants "2nd Loupekine snark: " second-snark)
+(report "Petersen graph: " (petersen))
+(report "1st Loupekine snark: " first-snark)
+(report "2nd Loupekine snark: " second-snark)
 
 (printf "The two Loupekine snarks are %s.\n"
         (if (not= (graph-k-cycle-count first-snark 6)
                   (graph-k-cycle-count second-snark 6))
           "not isomorphic" "isomorphic"))
+
+(def loupekine-first "the first loupekine snark"
+  # undirected with unit weights
+  (make-graph
+   @{1  @{2 1 3 1 4 1}
+     2  @{1 1 17 1 22 1}
+     3  @{1 1 19 1 21 1}
+     4  @{1 1 18 1 20 1}
+     5  @{11 1 13 1 15 1}
+     6  @{12 1 14 1 16 1}
+     7  @{10 1 13 1 16 1}
+     8  @{9 1 14 1 15 1}
+     9  @{8 1 11 1 17 1}
+     10 @{7 1 12 1 17 1}
+     11 @{5 1 9 1 18 1}
+     12 @{6 1 10 1 19 1}
+     13 @{5 1 7 1 19 1}
+     14 @{6 1 8 1 18 1}
+     15 @{5 1 8 1 21 1}
+     16 @{6 1 7 1 20 1}
+     17 @{2 1 9 1 10 1}
+     18 @{4 1 11 1 14 1}
+     19 @{3 1 12 1 13 1}
+     20 @{4 1 16 1 22 1}
+     21 @{3 1 15 1 22 1}
+     22 @{2 1 20 1 21 1}}
+   (map string (range 1 23))))
 
 (defn parse-adjacency-lists [text]
   (def adj @{})
@@ -81,6 +108,11 @@
   (each v (keys adj)
     (each w (get adj v) (when (< v w) (add-edge g v w))))
   g)
+
+#  https://houseofgraphs.org/graphs/1215 aka "Loupekines Snark 1"
+#  https://houseofgraphs.org/graphs/1217 aka "Loupekines Snark 2"
+#
+#  1-indexed adjacency from HoG's 0-indexed adjacency
 
 (def hog-1215-adj `1: 2 3 4
 2: 1 17 22
@@ -162,6 +194,24 @@
 
 (printf "table-2 relabelled. is :second same as block construction? %v"
         (same-edge-set? (rename hog-1217 relabel-2) second-snark))
+
+(def svg-style
+  @[:node-radius 0.25
+    :node-color "#F8FAFC"
+    :edge-color "#334155"
+    :node-width 1.2
+    :edge-width 1.8
+    :label-nodes true
+    :label-position :inside])
+
+(defn lombardi-stats [name g & kvs]
+  (def l (graph-layout g "lombardi" ;kvs))
+  (def n-poly (length (filter (fn [a] (= (a :kind) :poly)) (l :arcs))))
+  (def n-line (length (filter (fn [a] (= (a :kind) :line)) (l :arcs))))
+  (printf "lombardi %-11s residual %.4f  arcs %d  poly %d  line %d  graph %d->%d  visible %d->%d"
+          name (l :residual) (length (l :arcs)) n-poly n-line
+          (l :crossings-graph-before) (l :crossings-graph-after)
+          (l :crossings-visible-before) (l :crossings-visible-after)))
 
 (defn phi [node]
   (if (= node "c")
@@ -257,13 +307,17 @@
            (+ (c 1) (* radius (math/sin u)))]))
   corners)
 
-# The rim cycles
 (defn pins-of [ks]
   (def out @[])
   (each k ks
     (each i (range 3)
       (array/push out (string i "-" k))))
   out)
+
+(defn rim-radius [pos pins]
+  (def c (centroid-of pos pins))
+  (def p (pos (pins 0)))
+  (math/sqrt (+ (math/pow (- (p 0) (c 0)) 2) (math/pow (- (p 1) (c 1)) 2))))
 
 (def outer-pins (pins-of ["3" "4"]))
 (def rim-pins (pins-of ["3" "4" "5" "7"]))
@@ -274,21 +328,15 @@
 (def first-pos (symmetrise first-base))
 (def second-pos (symmetrise second-base))
 
-# the first snark, bounded by a hexagon
 (def first-drawn
   (merge first-pos (bounding-polygon first-pos outer-pins 6 0.4)))
 
-# the second snark, bounded by a dodecagon.
 (def second-drawn
   (merge second-pos (bounding-polygon second-pos rim-pins 12 1.2)))
 
-(defn rim-radius [pos pins]
-  (def c (centroid-of pos pins))
-  (def p (pos (pins 0)))
-  (math/sqrt (+ (math/pow (- (p 0) (c 0)) 2) (math/pow (- (p 1) (c 1)) 2))))
-
 (each [name pos pins]
-      [["first snark" first-drawn outer-pins] ["second snark" second-drawn rim-pins]]
+      [["1st snark" first-drawn outer-pins]
+       ["2nd snark" second-drawn rim-pins]]
   (def c (centroid-of pos pins))
   (def rr (rim-radius pos pins))
   (printf "%-12s symmetry error %.3f  closest pair %.3f  rim radius %.3f"
@@ -301,37 +349,19 @@
                                (math/pow (- (p 1) (c 1)) 2)))
                  rr)))))
 
-(def svg-style
-  @[:node-radius 0.25
-    :node-color "#F8FAFC"
-    :edge-color "#334155"
-    :node-width 1.2
-    :edge-width 1.8
-    :label-nodes true
-    :label-position :inside])
-
-(defn lombardi-stats [name g & kvs]
-  (def l (graph-layout g "lombardi" ;kvs))
-  (def n-poly (length (filter (fn [a] (= (a :kind) :poly)) (l :arcs))))
-  (def n-line (length (filter (fn [a] (= (a :kind) :line)) (l :arcs))))
-  (printf "lombardi %-11s residual %.4f  arcs %d  poly %d  line %d  graph %d->%d  visible %d->%d"
-          name (l :residual) (length (l :arcs)) n-poly n-line
-          (l :crossings-graph-before) (l :crossings-graph-after)
-          (l :crossings-visible-before) (l :crossings-visible-after)))
-
 (def svg-petersen (to-svg (petersen)
                           :layout "lombardi"
                           :arc-clearance 0.35
                           :node-clearance 0.45
-                          :path "img/petersen.svg"
+                          :path "img/loupekine-petersen.svg"
                           :label-edges false
                           ;svg-style)) # spliced
 
-(printf "wrote img/petersen.svg (%d bytes)\n" (length svg-petersen))
+(printf "wrote img/loupekine-petersen.svg (%d bytes)" (length svg-petersen))
 
 (lombardi-stats "petersen" (petersen)
-            :arc-clearance 0.35
-            :node-clearance 0.45)
+                :arc-clearance 0.35
+                :node-clearance 0.45)
 
 (def svg-first (to-svg first-snark
                        :path "img/loupekine-first.svg"
@@ -347,11 +377,11 @@
 (printf "wrote img/loupekine-first.svg (%d bytes)" (length svg-first))
 
 (lombardi-stats "first snark" first-snark
-            :arc-clearance 0.35
-            :node-clearance 0.45
-            :base :pos
-            :pos first-drawn
-            :vertex-relax false)
+                :arc-clearance 0.35
+                :node-clearance 0.45
+                :base :pos
+                :pos first-drawn
+                :vertex-relax false)
 
 (def svg-second (to-svg second-snark
                         :path "img/loupekine-second.svg"
@@ -368,20 +398,20 @@
 
 (lombardi-stats "second snark" second-snark
                 :arc-clearance 0.35
-            :node-clearance 0.45
-            :base :pos
-            :pos second-drawn
-            :vertex-relax false)
+                :node-clearance 0.45
+                :base :pos
+                :pos second-drawn
+                :vertex-relax false)
 
 (defn sw-stats [name g]
   (def l (layout-spring g))
-  (printf "spring: %s crossings %d -> %d (planar %v fallback %v)"
+  (printf "spring  %-11s crossings %d -> %d (planar %v fallback %v)"
           name (l :crossings-before) (l :crossings-after)
           (l :planar) (l :fallback)))
 
-(sw-stats "Petersen" (petersen))
-(sw-stats "First snark" first-snark)
-(sw-stats "Second snark" second-snark)
+(sw-stats "petersen" (petersen))
+(sw-stats "1st snark" first-snark)
+(sw-stats "2nd snark" second-snark)
 
 (def spring-node-opts @{:shape "circle"
                         :fillcolor "#E2E8F0"
@@ -390,17 +420,17 @@
 
 (def svg-spring-petersen (to-svg (petersen)
                                  :rankdir "TB"
-                                 :layout "twopi"
-                                 :path "img/petersen-spring.svg"
+                                 :layout "spring"
+                                 :path "img/loupekine-petersen-spring.svg"
                                  :label-edges false
                                  :node-opts spring-node-opts))
 
-(printf "wrote img/petersen-spring.svg (%d bytes)"
+(printf "wrote img/loupekine-petersen-spring.svg (%d bytes)"
         (length svg-spring-petersen))
 
 (def svg-spring-first (to-svg first-snark
                               :rankdir "TB"
-                              :layout "twopi"
+                              :layout "spring"
                               :path "img/loupekine-first-spring.svg"
                               :label-edges false
                               :node-opts spring-node-opts))
@@ -410,7 +440,7 @@
 
 (def svg-spring-second (to-svg second-snark
                                :rankdir "TB"
-                               :layout "twopi"
+                               :layout "spring"
                                :path "img/loupekine-second-spring.svg"
                                :label-edges false
                                :node-opts spring-node-opts))
